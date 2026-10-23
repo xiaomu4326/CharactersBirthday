@@ -1,0 +1,13 @@
+{
+    "app_title": "角色生日倒计时",
+    "select_character": "选择角色",
+    "until_next_birthday": "距下次生日",
+    "birthday": "生日",
+    "preview_title": "全部预览 · 最近生日 Top {top} · 点击卡片选择",
+    "today": "今天",
+    "tomorrow": "明天",
+    "days_unit": "天",
+    "total_count": "共 {n} 位角色 · 按生日临近排序显示前 {top} 位",
+    "no_data": "暂无角色数据",
+    "date_format": "{year}年{month}月{day}日"
+}

@@ -1,11 +1,14 @@
 """语言切换与文案翻译：从 data/lang 下的 JSON 文件读取键值文案。"""
 
 import json
+import os
+
+import paths
 
 
 class Translator:
-    def __init__(self, lang="zh", base_dir="./data/lang"):
-        self._base_dir = base_dir
+    def __init__(self, lang="zh", base_dir=None):
+        self._base_dir = base_dir or os.path.join(paths.data_dir(), "lang")
         self.set_lang(lang)
 
     def set_lang(self, lang):

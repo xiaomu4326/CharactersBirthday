@@ -1,0 +1,13 @@
+{
+    "app_title": "キャラクター誕生日カウントダウン",
+    "select_character": "キャラクター選択",
+    "until_next_birthday": "次の誕生日まで",
+    "birthday": "誕生日",
+    "preview_title": "プレビュー · 近日の誕生日 Top {top} · カードをクリックで選択",
+    "today": "今日",
+    "tomorrow": "明日",
+    "days_unit": "日",
+    "total_count": "全 {n} 人 · 誕生日が近い順に上位 {top} 人を表示",
+    "no_data": "データなし",
+    "date_format": "{year}年{month}月{day}日"
+}

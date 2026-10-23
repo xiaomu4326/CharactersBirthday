@@ -1,8 +1,17 @@
 import json
+import os
+
+import paths
+
+
+def _data_file(relative_path):
+    """返回 data 目录下某个文件的绝对路径。"""
+    return os.path.join(paths.data_dir(), relative_path)
+
 
 #查询所有角色的生日
 def read_all_characters_birthday():
-    with open("./data/characters_birthday_data.json", 'r', encoding='utf-8') as file:
+    with open(_data_file("characters_birthday_data.json"), 'r', encoding='utf-8') as file:
         character_birthday_data = json.load(file)
     return character_birthday_data
 
@@ -13,7 +22,7 @@ def read_selected_character_birthday(character_name):
 
 #查询所有角色的日文名
 def read_all_characters_names():
-    with open("./data/characters_name.json", 'r', encoding='utf-8') as file:
+    with open(_data_file("characters_name.json"), 'r', encoding='utf-8') as file:
         character_names_data = json.load(file)
     return character_names_data
 

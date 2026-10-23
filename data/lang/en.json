@@ -1,0 +1,13 @@
+{
+    "app_title": "Character Birthday Countdown",
+    "select_character": "Select Character",
+    "until_next_birthday": "Until next birthday",
+    "birthday": "Birthday",
+    "preview_title": "Preview · Upcoming Top {top} · Click a card to select",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "days_unit": "d",
+    "total_count": "{n} characters · showing top {top} by upcoming birthday",
+    "no_data": "No data",
+    "date_format": "{month}/{day}/{year}"
+}

@@ -158,9 +158,31 @@ def build_window():
                 rank_label.config(bg=theme.RANK_BG, fg=theme.RANK_FG)
         _refresh_detail()
 
+    def _refresh_badges():
+        # 重新计算各卡片徽章的剩余天数，刷新文案与“今天生日”配色
+        remaining = remainDays.get_all_characters_remaining_days()
+        for badge, en_name in card_badges:
+            days = remaining.get(en_name)
+            if days is None:
+                continue
+            days_text, is_today = _days_text(days)
+            badge.config(
+                text=days_text,
+                bg=theme.ACCENT_TODAY if is_today else theme.ACCENT,
+            )
+
     def _tick():
-        # 每秒刷新一次倒计时
+        # 每秒刷新一次倒计时；跨天时重新排序卡片并刷新日期相关文案
+        nonlocal today, today_key
         _refresh_detail()
+        new_today = date.today()
+        if new_today != today:
+            today = new_today
+            today_key = f"{today.month:02d}-{today.day:02d}"
+            _build_cards()
+            _apply_lang()
+            if selected["en"] is not None:
+                _select(selected["en"])
         root.after(1000, _tick)
 
     def _apply_lang():
@@ -174,8 +196,7 @@ def build_window():
         section.config(text=t("preview_title", top=top_count))
         footer.config(text=t("total_count", n=len(all_characters), top=top_count))
         lang_button.config(text=LANG_NAMES[translator.lang])
-        for badge, days in card_badges:
-            badge.config(text=_days_text(days)[0])
+        _refresh_badges()
         _refresh_detail()
 
     def _toggle_lang():
@@ -291,50 +312,101 @@ def build_window():
     canvas.bind("<MouseWheel>", _on_mousewheel)
 
     # ---------- 卡片 ----------
-    for index, (en_name, days) in enumerate(characters, start=1):
-        # 每张卡片一个 Frame，2 像素描边（选中时改为强调色）
-        card = tk.Frame(card_container, bg=theme.CARD_BG,
-                        highlightbackground=theme.CARD_BORDER, highlightthickness=2)
-        card.pack(fill="x", padx=16, pady=6)
+    def _build_cards():
+        # 重建预览卡片：清空旧卡片，按最新剩余天数重新排序 Top5
+        nonlocal characters, all_characters, top_count
 
-        # 左侧序号徽章
-        rank = tk.Frame(card, bg=theme.RANK_BG, width=28, height=28)
-        rank.pack_propagate(False)
-        rank.pack(side="left", padx=(12, 10), pady=12)
-        rank_label = tk.Label(rank, text=str(index), bg=theme.RANK_BG,
-                              fg=theme.RANK_FG, font=theme.FONT_RANK)
-        rank_label.pack(expand=True)
+        for child in card_container.winfo_children():
+            child.destroy()
+        card_refs.clear()
+        card_badges.clear()
 
-        # 右侧剩余天数徽章（今天生日用暖色）
-        days_text, is_today = _days_text(days)
-        badge_bg = theme.ACCENT_TODAY if is_today else theme.ACCENT
-        badge = tk.Label(card, text=days_text, bg=badge_bg, fg="white",
-                         font=theme.FONT_DAYS, padx=12, pady=5)
-        badge.pack(side="right", padx=(0, 12))
-        card_badges.append((badge, days))
+        characters = _top_characters(5)
+        all_characters = _all_characters()
+        top_count = len(characters)
 
-        # 中间名字与生日信息
-        name_block = tk.Frame(card, bg=theme.CARD_BG)
-        name_block.pack(side="left", fill="x", expand=True, pady=10)
+        combobox.config(
+            values=[f"{names.get(en, en)} · {en}" for en in all_characters],
+        )
 
-        ja_name = names.get(en_name, en_name)
-        tk.Label(name_block, text=ja_name, bg=theme.CARD_BG, fg=theme.TEXT,
-                 font=theme.FONT_NAME, anchor="w").pack(anchor="w")
+        for index, (en_name, days) in enumerate(characters, start=1):
+            # 每张卡片一个 Frame，2 像素描边（选中时改为强调色）
+            card = tk.Frame(card_container, bg=theme.CARD_BG,
+                            highlightbackground=theme.CARD_BORDER, highlightthickness=2)
+            card.pack(fill="x", padx=16, pady=6)
 
-        birthday = fileOperations.read_selected_character_birthday(en_name)
-        tk.Label(name_block, text=f"{birthday} · {en_name}", bg=theme.CARD_BG,
-                 fg=theme.SUBTEXT, font=theme.FONT_META, anchor="w").pack(anchor="w")
+            # 左侧序号徽章
+            rank = tk.Frame(card, bg=theme.RANK_BG, width=28, height=28)
+            rank.pack_propagate(False)
+            rank.pack(side="left", padx=(12, 10), pady=12)
+            rank_label = tk.Label(rank, text=str(index), bg=theme.RANK_BG,
+                                  fg=theme.RANK_FG, font=theme.FONT_RANK)
+            rank_label.pack(expand=True)
 
-        # 记录卡片与序号控件，便于切换选中时更新颜色；并绑定点击选中
-        card_refs[en_name] = (card, rank, rank_label)
-        _bind_click(card, lambda e, en=en_name: _select(en))
+            # 右侧剩余天数徽章（今天生日用暖色）
+            days_text, is_today = _days_text(days)
+            badge_bg = theme.ACCENT_TODAY if is_today else theme.ACCENT
+            badge = tk.Label(card, text=days_text, bg=badge_bg, fg="white",
+                             font=theme.FONT_DAYS, padx=12, pady=5)
+            badge.pack(side="right", padx=(0, 12))
+            card_badges.append((badge, en_name))
 
-    # 卡片构建完成后，给整个卡片容器及其子控件绑定滚轮
-    _bind_wheel(card_container)
+            # 中间名字与生日信息
+            name_block = tk.Frame(card, bg=theme.CARD_BG)
+            name_block.pack(side="left", fill="x", expand=True, pady=10)
+
+            ja_name = names.get(en_name, en_name)
+            tk.Label(name_block, text=ja_name, bg=theme.CARD_BG, fg=theme.TEXT,
+                     font=theme.FONT_NAME, anchor="w").pack(anchor="w")
+
+            birthday = fileOperations.read_selected_character_birthday(en_name)
+            tk.Label(name_block, text=f"{birthday} · {en_name}", bg=theme.CARD_BG,
+                     fg=theme.SUBTEXT, font=theme.FONT_META, anchor="w").pack(anchor="w")
+
+            # 记录卡片与序号控件，便于切换选中时更新颜色；并绑定点击选中
+            card_refs[en_name] = (card, rank, rank_label)
+            _bind_click(card, lambda e, en=en_name: _select(en))
+
+        # 卡片构建完成后，给整个卡片容器及其子控件绑定滚轮
+        _bind_wheel(card_container)
+
+    # 初次构建卡片
+    _build_cards()
 
     # ---------- 底部说明 ----------
     footer = tk.Label(root, bg=theme.BG, fg=theme.SUBTEXT, font=theme.FONT_META)
     footer.pack(pady=(6, 14))
+
+    """# ===== 以下为测试代码：每次点击模拟日期 +1 天，可整体删除 =====
+    import datetime as _dt
+
+    class _SimDate(_dt.date):
+        offset = 0
+        @classmethod
+        def today(cls):
+            return _dt.date.today() + _dt.timedelta(days=cls.offset)
+
+    def _test_rollover():
+        # 每点一次让模拟日期前进 1 天，重建卡片观察跨天重排效果
+        _SimDate.offset += 1
+        real_date = remainDays.date
+        remainDays.date = _SimDate
+        try:
+            _build_cards()
+        finally:
+            remainDays.date = real_date
+        if selected["en"] is not None:
+            _select(selected["en"])
+        test_button.config(text=f"测试：+{_SimDate.offset}天")
+
+    test_button = tk.Button(
+        root, text="测试：+0天", command=_test_rollover,
+        bg=theme.CARD_BG, fg=theme.SUBTEXT,
+        activebackground=theme.CARD_BG, activeforeground=theme.TEXT,
+        relief="flat", bd=0, font=theme.FONT_META, cursor="hand2", padx=8, pady=2,
+    )
+    test_button.pack(pady=(0, 6))
+    # ===== 测试代码结束 ====="""
 
     # 应用文案、初始选中最近生日的角色，并启动每秒刷新
     _apply_lang()

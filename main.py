@@ -1,10 +1,10 @@
 """程序主入口：启动角色生日倒计时图形界面。"""
 
-import Window
+import window
 
 
 def main():
-    Window.build_window().mainloop()
+    window.build_window().mainloop()
 
 
 if __name__ == "__main__":

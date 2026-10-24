@@ -1,0 +1,117 @@
+[17:17:57] Installing JDK...                                                   
+[17:18:01] Installing Android SDK...                                           
+           Creating app shell from apk/flet-template with ref "1.0.5"...       
+[17:18:02] Created app shell OK                                                
+           Packaging Python app...                                             
+           Excluded from app package by default: .gitignore, __pycache__,      
+           flet-template\__pycache__ (use --include <path> or                  
+           --no-default-excludes to package them)                              
+[17:18:25] Packaged Python app OK                                              
+           Registering Flutter user extensions...                              
+           Registered Flutter user extensions OK                               
+           Generating splash screens...                                        
+[17:18:26] Generated splash screens OK                                         
+           Building .apk for Android...                                        
+[17:19:48] Resolving dependencies...                                           
+           Downloading packages...                                             
+             code_assets 1.2.1 (2.1.0 available)                               
+             connectivity_plus 7.3.1 (7.3.2 available)                         
+             cross_file 0.3.5+5 (0.4.0 available)                              
+             cupertino_icons 1.0.9 (2.0.0 available)                           
+             dbus 0.7.12 (0.8.0 available)                                     
+             device_info_plus 12.4.0 (13.3.0 available)                        
+             device_info_plus_platform_interface 7.0.3 (8.1.0 available)       
+             equatable 2.1.0 (3.0.0 available)                                 
+             file_picker 11.0.3 (13.1.0 available)                             
+           ! flet 1.0.5 (overridden)                                           
+           + flet_android_notifications 0.1.0 from path                        
+           F:\CharactersBirthday\apk\build\flutter-packages\flet_android_notifi
+           cations                                                             
+             flutter_lints 2.0.3 (6.0.0 available)                             
+           + flutter_local_notifications 22.3.2                                
+           + flutter_local_notifications_linux 8.0.2                           
+           + flutter_local_notifications_platform_interface 12.2.0             
+           + flutter_local_notifications_web 1.0.0                             
+           + flutter_local_notifications_windows 3.1.1                         
+             hooks 2.0.2 (2.2.0 available)                                     
+             intl 0.20.2 (0.20.3 available)                                    
+             lints 2.1.1 (6.1.0 available)                                     
+             material_color_utilities 0.13.0 (0.13.1 available)                
+             meta 1.18.0 (1.19.0 available)                                    
+             nm 0.5.0 (0.6.0 available)                                        
+             objective_c 9.5.0 (9.6.2 available)                               
+             package_config 2.2.0 (3.0.0 available)                            
+             package_info_plus 9.0.1 (10.2.2 available)                        
+             package_info_plus_platform_interface 3.2.1 (4.1.0 available)      
+             pasteboard 0.5.0 (0.6.0 available)                                
+             petitparser 6.1.0 (7.1.0 available)                               
+             record_use 0.6.0 (1.1.1 available)                                
+             screen_retriever 0.2.2 (0.3.0 available)                          
+             serious_python 5.0.0 (6.0.0 available)                            
+             serious_python_android 5.0.0 (6.0.0 available)                    
+             serious_python_darwin 5.0.0 (6.0.0 available)                     
+             serious_python_linux 5.0.0 (6.0.0 available)                      
+             serious_python_platform_interface 5.0.0 (6.0.0 available)         
+             serious_python_windows 5.0.0 (6.0.0 available)                    
+             share_plus 12.0.2 (13.3.1 available)                              
+             share_plus_platform_interface 6.1.0 (7.2.0 available)             
+             shared_preferences_foundation 2.5.7 (2.6.0 available)             
+             shimmer 3.0.0 (4.0.0 available)                                   
+           + timezone 0.11.2                                                   
+             toml 0.15.0 (0.18.0 available)                                    
+             vector_math 2.2.0 (2.4.3 available)                               
+             wakelock_plus 1.5.2 (1.8.2 available)                             
+             web 1.1.1 (1.1.2 available)                                       
+             win32 5.15.0 (6.4.0 available)                                    
+             win32_registry 2.1.0 (3.0.3 available)                            
+             xml 6.5.0 (7.1.0 available)                                       
+           Changed 7 dependencies!                                             
+           41 packages have newer versions incompatible with dependency        
+           constraints.                                                        
+           Try `flutter pub outdated` for more information.                    
+           Upgrading gradle.properties                                         
+           Upgrading gradle.properties                                         
+           Running Gradle task 'assembleRelease'...                            
+           Running Gradle task 'assembleRelease'...                            
+           73.4s                                                               
+                                                                               
+                                                                               
+           FAILURE: Build failed with an exception.                            
+                                                                               
+           * Where:                                                            
+           Build file                                                          
+           'F:\CharactersBirthday\apk\build\flutter\android\app\build.gradle.kt
+           s' line: 3                                                          
+                                                                               
+           * What went wrong:                                                  
+           An exception occurred applying plugin request                       
+           > Failed to apply plugin 'com.android.internal.application'.        
+              > Failed to create service                                       
+           'com.android.build.gradle.internal.errors.AndroidProblemReporterProv
+           ider_62bf52cf-eab8-4f02-a8cd-e03342c1f91b'.                         
+                 > Could not create an instance of type                        
+           com.android.build.gradle.internal.errors.AndroidProblemReporterProvi
+           der.                                                                
+                    > Could not create service of type InternalProblems using  
+           ProblemsBuildTreeServices.createInternalProblems().                 
+                       > Plugin 'com.android.internal.application' relies on   
+           'org.gradle.api.problems.internal.InternalProblems', a Gradle       
+           internal API that was removed in Gradle 9.6.0. Update the plugin to 
+           a version that no longer uses Gradle internal APIs, or use Gradle   
+           9.5. For more information, please refer to                          
+           https://docs.gradle.org/9.7.1/userguide/upgrading_version_9.html#agp
+           _8x_incompatible in the Gradle documentation.                       
+                                                                               
+           * Try:                                                              
+           > Run with --stacktrace option to get the stack trace.              
+           > Run with --info or --debug option to get more log output.         
+           > Run with --scan to get full insights from a Build Scan (powered by
+           Develocity).                                                        
+           > Get more help at https://help.gradle.org.                         
+                                                                               
+           BUILD FAILED in 1m 13s                                              
+           Gradle task assembleRelease failed with exit code 1                 
+                                                                               
++-----------------------------------------------------------------------------+
+| Error building Flet app - see the log of failed command above.              |
++-----------------------------------------------------------------------------+

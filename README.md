@@ -214,7 +214,7 @@ JSON 的书写顺序无关紧要 —— 程序启动时会按剩余天数重新�
 | `NanamiTōko` | 七海燈子 | 02-19 |
 | `KoitoYū` | 小糸侑 | 04-05 |
 | `AmaoriRenako` | 甘織れな子 | 03-03 |
-| `KoyanagiYKaho` | 小柳香穂 | 04-10 |
+| `KoyanagiKaho` | 小柳香穂 | 04-10 |
 | `AmaoriHaruna` | 甘織遥奈 | 05-28 |
 | `KotoSatsuki` | 琴紗月 | 07-26 |
 | `ŌdzukaMai` | 王塚真唯 | 08-31 |

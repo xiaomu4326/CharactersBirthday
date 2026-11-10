@@ -196,6 +196,8 @@ The repository **only tracks source code**; everything a build produces is exclu
 
 Birthday data was compiled from public sources and is intended for personal use and reference only; where it differs from official settings, the official version wins. Character names and the related works remain the property of their original authors and rights holders.
 
+The data itself is dedicated to the public domain under CC0 1.0 and is free to reuse — see [data/LICENSE](data/LICENSE).
+
 <details>
 <summary><b>Bundled characters (28)</b></summary>
 
@@ -234,9 +236,11 @@ Birthday data was compiled from public sources and is intended for personal use 
 
 ## License
 
-The source code is released under the [MIT License](LICENSE), Copyright (c) 2026 近江汐莉.
+**Source code** is released under the [MIT License](LICENSE), Copyright (c) 2026 近江汐莉.
 
-The following are not covered by that grant and remain the property of their respective owners:
+**Character birthday data** (in `data/`, plus the identical copy in `apk/data.py`) is released under [CC0 1.0](data/LICENSE) and dedicated to the public domain: you may copy, modify and redistribute it freely — even commercially — with no attribution required.
 
-- **Character names, birthdays and other data** (`data/`, `apk/data.py`) — character names and the related works are copyrighted by their original authors and rights holders; this project merely collects and displays them for personal use.
+The following are not covered by the above and remain the property of their respective owners:
+
+- **Character names and the related works** — copyright their original authors and rights holders; this project merely collects and displays them for personal use. The CC0 dedication covers only the birthday data and UI strings, and neither does nor intends to change the ownership of the character names or the works.
 - **`apk/flet-template/`** — derived from the official Flet Flutter build template; its licensing follows the upstream Flet project.

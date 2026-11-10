@@ -1,0 +1,23 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# ===== IDE =====
+.idea/
+.vscode/
+
+# ===== PyInstaller 构建产物（build.bat 生成）=====
+/build/
+/dist/
+
+# ===== flet / Android 构建产物 =====
+/apk/build/
+/apk/flet-template/
+/apk/.gradle/
+
+# ===== 发布包与日志 =====
+*.zip
+*.log

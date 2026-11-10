@@ -14,9 +14,12 @@ venv/
 /dist/
 
 # ===== flet / Android 构建产物 =====
+# 注意：/apk/flet-template/ 是手改过的自定义构建模板（desugaring + multidex），
+# 属于源码，必须提交，不要加进这里。
 /apk/build/
-/apk/flet-template/
-/apk/.gradle/
+/apk/.flet/
+.gradle/
+.dart_tool/
 
 # ===== 发布包与日志 =====
 *.zip

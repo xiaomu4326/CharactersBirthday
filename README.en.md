@@ -99,6 +99,7 @@ CharactersBirthday/
 ├── data/                       # Birthdays, display names, translations
 ├── build.bat                   # One-command PyInstaller build
 ├── CharactersBirthday.spec     # PyInstaller config (onedir + windowed)
+├── LICENSE                     # MIT license
 └── apk/                        # Android version (standalone Flet project)
     ├── main.py                 # Flet entry point; mirrors the desktop UI and interactions
     ├── data.py                 # Embedded data (avoids Android asset-directory issues)
@@ -230,3 +231,12 @@ Birthday data was compiled from public sources and is intended for personal use 
 | `Tohru` | トール | 06-30 |
 
 </details>
+
+## License
+
+The source code is released under the [MIT License](LICENSE), Copyright (c) 2026 近江汐莉.
+
+The following are not covered by that grant and remain the property of their respective owners:
+
+- **Character names, birthdays and other data** (`data/`, `apk/data.py`) — character names and the related works are copyrighted by their original authors and rights holders; this project merely collects and displays them for personal use.
+- **`apk/flet-template/`** — derived from the official Flet Flutter build template; its licensing follows the upstream Flet project.

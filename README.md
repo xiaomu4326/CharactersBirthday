@@ -99,6 +99,7 @@ CharactersBirthday/
 ├── data/                       # 角色生日、角色名、三语文案
 ├── build.bat                   # PyInstaller 一键打包
 ├── CharactersBirthday.spec     # PyInstaller 配置（onedir + windowed）
+├── LICENSE                     # MIT 许可证
 └── apk/                        # Android 版（Flet 独立工程）
     ├── main.py                 # Flet 主入口，复刻桌面版界面与交互
     ├── data.py                 # 内嵌数据（规避 Android 资源目录解析问题）
@@ -230,3 +231,12 @@ JSON 的书写顺序无关紧要 —— 程序启动时会按剩余天数重新�
 | `Tohru` | トール | 06-30 |
 
 </details>
+
+## 许可证
+
+源代码以 [MIT License](LICENSE) 授权，Copyright (c) 2026 近江汐莉。
+
+以下内容不在该授权范围内，权利归各自所有者：
+
+- **角色名称、生日等数据**（`data/`、`apk/data.py`）—— 角色名称及相关作品版权归原作者与版权方所有，本项目仅作个人整理与展示。
+- **`apk/flet-template/`** —— 派生自 Flet 官方的 Flutter 构建模板，授权以上游 Flet 项目为准。

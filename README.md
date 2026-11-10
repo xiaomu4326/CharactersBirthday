@@ -8,6 +8,8 @@
 
 把喜欢的角色生日收进一个小窗口 —— 按生日临近排序，倒计时精确到秒，中 / 英 / 日三语切换。
 
+**中文** · [English](README.en.md)
+
 **Windows 桌面版（Tkinter，零第三方依赖）** · **Android 版（Flet）**
 
 </div>

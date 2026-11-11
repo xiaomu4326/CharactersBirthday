@@ -184,7 +184,6 @@ JSON 的书写顺序无关紧要 —— 程序启动时会按剩余天数重新�
 
 `flet build` 本身没有构建前钩子，无法在生成工程后再改 Gradle 配置，所以只能通过 `tool.flet.template.url` 指向这份自定义模板。
 
-**发布**：`dist/` 里的 exe 压缩包与 APK 请上传到 GitHub Releases，不要提交进仓库。
 
 ## 开发提示
 

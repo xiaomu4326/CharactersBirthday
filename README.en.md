@@ -198,38 +198,40 @@ Birthday data was compiled from public sources and is intended for personal use 
 The data itself is dedicated to the public domain under CC0 1.0 and is free to reuse — see [data/LICENSE](data/LICENSE).
 
 <details>
-<summary><b>Bundled characters (28)</b></summary>
+<summary><b>Bundled characters (28, grouped by source work)</b></summary>
 
-| English name (JSON key) | Display name | Birthday |
-| --- | --- | --- |
-| `OumiShiori` | 近江汐莉 | 04-01 |
-| `YashiroMiko` | 社美胡 | 10-22 |
-| `YaotoseHinako` | 八百歳比名子 | 07-02 |
-| `MiyagiShiori` | 宮城志緒里 | 09-25 |
-| `SendaiHatsuki` | 仙台葉月 | 08-23 |
-| `AdachiSakura` | 安達桜 | 10-19 |
-| `ShimamuraHōgetsu` | 島村抱月 | 04-10 |
-| `KinoHimari` | 木野ひまり | 07-18 |
-| `AsanaGiyori` | 朝凪依 | 11-26 |
-| `MizukguchiAki` | 水口亜季 | 04-12 |
-| `IzumiShiho` | 泉志帆 | 10-16 |
-| `KamiinaBotan` | 上伊那ぼたん | 04-07 |
-| `TonamiIbuki` | 砺波いぶき | 08-08 |
-| `NanamiTōko` | 七海燈子 | 02-19 |
-| `KoitoYū` | 小糸侑 | 04-05 |
-| `AmaoriRenako` | 甘織れな子 | 03-03 |
-| `KoyanagiKaho` | 小柳香穂 | 04-10 |
-| `AmaoriHaruna` | 甘織遥奈 | 05-28 |
-| `KotoSatsuki` | 琴紗月 | 07-26 |
-| `ŌdzukaMai` | 王塚真唯 | 08-31 |
-| `SenaAjisai` | 瀬名紫陽花 | 12-12 |
-| `Anisufia` | アニスフィア | 04-16 |
-| `Yufiria` | ユフィリア | 11-10 |
-| `TotsukiShīna` | トツキ・シーナ | 11-14 |
-| `KagariMimi` | カガリ・ミミ | 12-03 |
-| `SakayoriIroha` | 酒寄彩葉 | 05-11 |
-| `Kaguya` | かぐや | 07-12 |
-| `Tohru` | トール | 06-30 |
+| English name (JSON key) | Display name | Birthday | Source work (official site) |
+| --- | --- | --- | --- |
+| `OumiShiori` | 近江汐莉 | 04-01 | [私を喰べたい、ひとでなし](https://wata-tabe.com/) |
+| `YashiroMiko` | 社美胡 | 10-22 | [私を喰べたい、ひとでなし](https://wata-tabe.com/) |
+| `YaotoseHinako` | 八百歳比名子 | 07-02 | [私を喰べたい、ひとでなし](https://wata-tabe.com/) |
+| `MiyagiShiori` | 宮城志緒里 | 09-25 | [週に一度クラスメイトを買う話](https://promo.kadokawa.co.jp/fantasiabunko/special/202302shuichi/) |
+| `SendaiHatsuki` | 仙台葉月 | 08-23 | [週に一度クラスメイトを買う話](https://promo.kadokawa.co.jp/fantasiabunko/special/202302shuichi/) |
+| `AdachiSakura` | 安達桜 | 10-19 | [安達としまむら](https://www.tbs.co.jp/anime/adashima/) |
+| `ShimamuraHōgetsu` | 島村抱月 | 04-10 | [安達としまむら](https://www.tbs.co.jp/anime/adashima/) |
+| `KinoHimari` | 木野ひまり | 07-18 | [ささやくように恋を唄う](https://sasakoi-anime.com/) |
+| `AsanaGiyori` | 朝凪依 | 11-26 | [ささやくように恋を唄う](https://sasakoi-anime.com/) |
+| `MizukguchiAki` | 水口亜季 | 04-12 | [ささやくように恋を唄う](https://sasakoi-anime.com/) |
+| `IzumiShiho` | 泉志帆 | 10-16 | [ささやくように恋を唄う](https://sasakoi-anime.com/) |
+| `KamiinaBotan` | 上伊那ぼたん | 04-07 | [上伊那ぼたん、酔へる姿は百合の花](https://kamiina-botan.com/) |
+| `TonamiIbuki` | 砺波いぶき | 08-08 | [上伊那ぼたん、酔へる姿は百合の花](https://kamiina-botan.com/) |
+| `NanamiTōko` | 七海燈子 | 02-19 | [やがて君になる](https://yagakimi.com/) |
+| `KoitoYū` | 小糸侑 | 04-05 | [やがて君になる](https://yagakimi.com/) |
+| `AmaoriRenako` | 甘織れな子 | 03-03 | [わたなれ](https://www.watanare-anime.com/) |
+| `KoyanagiKaho` | 小柳香穂 | 04-10 | [わたなれ](https://www.watanare-anime.com/) |
+| `AmaoriHaruna` | 甘織遥奈 | 05-28 | [わたなれ](https://www.watanare-anime.com/) |
+| `KotoSatsuki` | 琴紗月 | 07-26 | [わたなれ](https://www.watanare-anime.com/) |
+| `ŌdzukaMai` | 王塚真唯 | 08-31 | [わたなれ](https://www.watanare-anime.com/) |
+| `SenaAjisai` | 瀬名紫陽花 | 12-12 | [わたなれ](https://www.watanare-anime.com/) |
+| `Anisufia` | アニスフィア | 04-16 | [転生王女と天才令嬢の魔法革命](https://tenten-kakumei.com/) |
+| `Yufiria` | ユフィリア | 11-10 | [転生王女と天才令嬢の魔法革命](https://tenten-kakumei.com/) |
+| `TotsukiShīna` | トツキ・シーナ | 11-14 | [きみが死ぬまで恋をしたい](https://kimishinu-anime.com/) |
+| `KagariMimi` | カガリ・ミミ | 12-03 | [きみが死ぬまで恋をしたい](https://kimishinu-anime.com/) |
+| `SakayoriIroha` | 酒寄彩葉 | 05-11 | [超かぐや姫！](https://www.cho-kaguyahime.com/) |
+| `Kaguya` | かぐや | 07-12 | [超かぐや姫！](https://www.cho-kaguyahime.com/) |
+| `Tohru` | トール | 06-30 | [小林さんちのメイドラゴン](https://maidragon.jp/) |
+
+> Work titles are given in the original Japanese; the links point to **official sites** (TV anime official site or the publisher's special page). 「わたなれ」 is the official short title of 『わたしが恋人になれるわけないじゃん、ムリムリ！（※ムリじゃなかった!?）』. The original 「安達としまむら」 site (`adashima.jp`) is no longer online, so the TBS anime site is linked instead.
 
 </details>
 

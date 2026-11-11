@@ -184,7 +184,6 @@ The repository **only tracks source code**; everything a build produces is exclu
 
 `flet build` has no pre-build hook, so the Gradle configuration cannot be patched after the project has been generated; pointing `tool.flet.template.url` at this custom template is the only way.
 
-**Releasing**: upload the exe archive from `dist/` and the APK to GitHub Releases instead of committing them.
 
 ## Development notes
 

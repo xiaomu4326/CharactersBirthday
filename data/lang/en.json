@@ -9,5 +9,17 @@
     "days_unit": "d",
     "total_count": "{n} characters · showing top {top} by upcoming birthday",
     "no_data": "No data",
-    "date_format": "{month}/{day}/{year}"
+    "date_format": "{month}/{day}/{year}",
+    "add_character": "Add character",
+    "field_key": "Key",
+    "field_name": "Display name",
+    "field_birthday": "Birthday",
+    "hint_name_default": "Leave empty to use the key",
+    "hint_birthday_format": "Format MM-DD, e.g. 04-01",
+    "btn_save": "Save",
+    "btn_cancel": "Cancel",
+    "err_key_required": "Key is required",
+    "err_birthday_invalid": "Birthday must be in MM-DD format",
+    "err_key_exists": "Key \"{key}\" already exists",
+    "err_save_failed": "Save failed: {error}"
 }

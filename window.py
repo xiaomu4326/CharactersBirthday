@@ -1,3 +1,4 @@
+import re
 import tkinter as tk
 import tkinter.ttk as ttk
 from datetime import date
@@ -17,6 +18,20 @@ except Exception:
 
 LANG_ORDER = ["zh", "en", "ja"]
 LANG_NAMES = {"zh": "中文", "en": "English", "ja": "日本語"}
+
+
+def _normalize_birthday(text):
+    """把生日文本规范成 "MM-DD"（允许 4-1、04/01 这类写法）；非法时返回 None。"""
+    match = re.fullmatch(r"\s*(\d{1,2})\s*[-/.]\s*(\d{1,2})\s*", text or "")
+    if match is None:
+        return None
+    month, day = int(match.group(1)), int(match.group(2))
+    try:
+        # 用闰年（2000）校验，顺带允许 02-29
+        date(2000, month, day)
+    except ValueError:
+        return None
+    return f"{month:02d}-{day:02d}"
 
 
 def _next_lang(current):
@@ -196,6 +211,7 @@ def build_window():
         section.config(text=t("preview_title", top=top_count))
         footer.config(text=t("total_count", n=len(all_characters), top=top_count))
         lang_button.config(text=LANG_NAMES[translator.lang])
+        add_button.config(text=f"＋ {t('add_character')}")
         _refresh_badges()
         _refresh_detail()
 
@@ -203,6 +219,104 @@ def build_window():
         # 点击语言按钮：切换到下一语言并刷新界面文案
         translator.set_lang(_next_lang(translator.lang))
         _apply_lang()
+
+    # ---------- 添加角色 ----------
+    def _open_add_dialog():
+        # 弹出「添加角色」窗口：键名 + 角色名 + 生日；保存后写回 data 并刷新界面
+        dialog = tk.Toplevel(root)
+        dialog.title(t("add_character"))
+        dialog.configure(bg=theme.BG)
+        dialog.transient(root)
+        dialog.resizable(False, False)
+
+        body = tk.Frame(dialog, bg=theme.BG)
+        body.pack(fill="both", expand=True, padx=18, pady=16)
+
+        def _field(label_text, hint_text=None):
+            # 一个字段 = 标题 + 输入框（+ 灰色提示行）
+            tk.Label(body, text=label_text, bg=theme.BG, fg=theme.SUBTEXT,
+                     font=theme.FONT_SUB, anchor="w").pack(fill="x")
+            entry = tk.Entry(body, font=theme.FONT_SUB, bg=theme.CARD_BG,
+                             fg=theme.TEXT, relief="flat", width=28,
+                             highlightthickness=1,
+                             highlightbackground=theme.CARD_BORDER,
+                             highlightcolor=theme.ACCENT,
+                             insertbackground=theme.TEXT)
+            entry.pack(fill="x", ipady=5, pady=(3, 0))
+            if hint_text:
+                tk.Label(body, text=hint_text, bg=theme.BG, fg=theme.SUBTEXT,
+                         font=theme.FONT_META, anchor="w").pack(fill="x", pady=(2, 0))
+            tk.Frame(body, bg=theme.BG, height=8).pack(fill="x")
+            return entry
+
+        key_entry = _field(t("field_key"))
+        name_entry = _field(t("field_name"), t("hint_name_default"))
+        birthday_entry = _field(t("field_birthday"), t("hint_birthday_format"))
+
+        error_label = tk.Label(body, text="", bg=theme.BG, fg=theme.ERROR,
+                               font=theme.FONT_META, anchor="w", justify="left",
+                               wraplength=260)
+        error_label.pack(fill="x")
+
+        def _commit():
+            # 校验 → 写盘 → 刷新主界面；任何一步失败都留在弹窗里提示
+            key = key_entry.get().strip()
+            name = name_entry.get().strip()
+            birthday = _normalize_birthday(birthday_entry.get())
+
+            if not key:
+                error_label.config(text=t("err_key_required"))
+                key_entry.focus_set()
+                return
+            if birthday is None:
+                error_label.config(text=t("err_birthday_invalid"))
+                birthday_entry.focus_set()
+                return
+            if fileOperations.character_exists(key):
+                error_label.config(text=t("err_key_exists", key=key))
+                key_entry.focus_set()
+                return
+            try:
+                fileOperations.add_character(key, name, birthday)
+            except (OSError, ValueError) as exc:
+                error_label.config(text=t("err_save_failed", error=exc))
+                return
+
+            dialog.destroy()
+            # 已落盘：重读数据、重建卡片与下拉框，并直接选中新角色
+            _reload_characters(key)
+
+        buttons = tk.Frame(body, bg=theme.BG)
+        buttons.pack(fill="x", pady=(12, 0))
+
+        save_button = tk.Button(buttons, text=t("btn_save"), command=_commit,
+                                bg=theme.ACCENT, fg="white",
+                                activebackground=theme.ACCENT, activeforeground="white",
+                                relief="flat", bd=0, font=theme.FONT_SUB,
+                                cursor="hand2", padx=16, pady=5)
+        save_button.pack(side="right")
+
+        cancel_button = tk.Button(buttons, text=t("btn_cancel"), command=dialog.destroy,
+                                  bg=theme.CARD_BG, fg=theme.SUBTEXT,
+                                  activebackground=theme.CARD_BORDER,
+                                  activeforeground=theme.TEXT,
+                                  relief="flat", bd=0, font=theme.FONT_SUB,
+                                  cursor="hand2", padx=16, pady=5,
+                                  highlightthickness=1,
+                                  highlightbackground=theme.CARD_BORDER)
+        cancel_button.pack(side="right", padx=(0, 8))
+
+        # 回车保存、Esc 关闭
+        dialog.bind("<Return>", lambda event: _commit())
+        dialog.bind("<Escape>", lambda event: dialog.destroy())
+
+        # 居中显示在主窗口上方，焦点落在第一个输入框
+        dialog.update_idletasks()
+        x = root.winfo_rootx() + (root.winfo_width() - dialog.winfo_reqwidth()) // 2
+        y = root.winfo_rooty() + (root.winfo_height() - dialog.winfo_reqheight()) // 2
+        dialog.geometry(f"+{max(x, 0)}+{max(y, 0)}")
+        dialog.grab_set()
+        key_entry.focus_set()
 
     # ---------- 顶部标题栏 ----------
     header = tk.Frame(root, bg=theme.HEADER_BG)
@@ -217,6 +331,14 @@ def build_window():
                             relief="flat", bd=0, font=theme.FONT_META,
                             cursor="hand2", padx=8, pady=2)
     lang_button.pack(side="right", padx=12, pady=(10, 0))
+
+    add_button = tk.Button(topbar, command=_open_add_dialog,
+                           bg=theme.HEADER_BG, fg=theme.HEADER_SUB,
+                           activebackground=theme.HEADER_BG,
+                           activeforeground=theme.HEADER_FG,
+                           relief="flat", bd=0, font=theme.FONT_META,
+                           cursor="hand2", padx=8, pady=2)
+    add_button.pack(side="right", padx=(12, 0), pady=(10, 0))
 
     title = tk.Label(header, bg=theme.HEADER_BG, fg=theme.HEADER_FG,
                      font=theme.FONT_TITLE)
@@ -369,6 +491,15 @@ def build_window():
 
         # 卡片构建完成后，给整个卡片容器及其子控件绑定滚轮
         _bind_wheel(card_container)
+
+    def _reload_characters(select_key=None):
+        """重新从 data 读取角色数据并重建界面；新增角色后调用。"""
+        nonlocal names
+        names = fileOperations.read_all_characters_names()
+        _build_cards()   # 内部会重算 characters / all_characters / top_count，并刷新下拉框
+        _apply_lang()    # 刷新日期、统计与徽章文案
+        if select_key is not None:
+            _select(select_key)
 
     # 初次构建卡片
     _build_cards()

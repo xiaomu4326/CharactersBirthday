@@ -9,5 +9,17 @@
     "days_unit": "日",
     "total_count": "全 {n} 人 · 誕生日が近い順に上位 {top} 人を表示",
     "no_data": "データなし",
-    "date_format": "{year}年{month}月{day}日"
+    "date_format": "{year}年{month}月{day}日",
+    "add_character": "キャラクター追加",
+    "field_key": "キー",
+    "field_name": "表示名",
+    "field_birthday": "誕生日",
+    "hint_name_default": "空欄の場合はキーを使用",
+    "hint_birthday_format": "形式は MM-DD（例：04-01）",
+    "btn_save": "保存",
+    "btn_cancel": "キャンセル",
+    "err_key_required": "キーを入力してください",
+    "err_birthday_invalid": "誕生日の形式が正しくありません（MM-DD）",
+    "err_key_exists": "キー「{key}」は既に存在します",
+    "err_save_failed": "保存に失敗しました：{error}"
 }

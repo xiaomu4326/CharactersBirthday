@@ -9,5 +9,17 @@
     "days_unit": "天",
     "total_count": "共 {n} 位角色 · 按生日临近排序显示前 {top} 位",
     "no_data": "暂无角色数据",
-    "date_format": "{year}年{month}月{day}日"
+    "date_format": "{year}年{month}月{day}日",
+    "add_character": "添加角色",
+    "field_key": "键名",
+    "field_name": "角色名",
+    "field_birthday": "生日",
+    "hint_name_default": "留空则使用键名",
+    "hint_birthday_format": "格式 MM-DD，例如 04-01",
+    "btn_save": "保存",
+    "btn_cancel": "取消",
+    "err_key_required": "请填写键名",
+    "err_birthday_invalid": "生日格式不正确，应为 MM-DD",
+    "err_key_exists": "键名「{key}」已存在",
+    "err_save_failed": "保存失败：{error}"
 }

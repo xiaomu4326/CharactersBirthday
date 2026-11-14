@@ -13,6 +13,7 @@ RANK_BG = "#88C0D0"     # 序号底色
 RANK_FG = "#2E3440"     # 序号文字
 ACCENT = "#5E81AC"      # 强调色 / 剩余天数徽章（常规）
 ACCENT_TODAY = "#D08770"  # 剩余天数徽章（今天生日）
+ERROR = "#BF616A"       # 表单错误提示文字
 
 # ---------- 字体 ----------
 FONT_TITLE = ("Microsoft YaHei UI", 16, "bold")

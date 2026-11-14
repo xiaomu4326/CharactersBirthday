@@ -29,6 +29,7 @@ Keep your favorite characters' birthdays in one small window — sorted by how s
 | Leap-day fallback | February 29 falls back to February 28 in non-leap years |
 | HiDPI support | Calls `SetProcessDpiAwareness(1)` on Windows so the UI stays crisp |
 | Birthday reminder (APK only) | Pushes a system notification on the birthday, at most once per day |
+| Add characters in-app | Click "＋ Add character" in the top-right, fill in key / name / birthday; the desktop build writes back to `data/` while the APK stores it on the device — either way the UI refreshes immediately |
 
 The UI uses the soft Nord palette (defined in [theme.py](theme.py)) — clear contrast without being harsh:
 
@@ -44,7 +45,7 @@ The UI uses the soft Nord palette (defined in [theme.py](theme.py)) — clear co
 
 The window defaults to `380 × 640` (minimum `340 × 520`), is centered on screen at startup, and is split into five blocks from top to bottom:
 
-1. **Dark header** — app title, today's date, language button in the top-right corner
+1. **Dark header** — app title, today's date, and the "Add character" / language buttons in the top-right corner
 2. **Character picker** — a label plus a read-only dropdown (`DisplayName · EnglishName`)
 3. **Detail card** — the selected character's name, `Birthday MM-DD · EnglishName`, and a second-level countdown to the next birthday
 4. **Preview list** — "Next 5 birthdays": each card carries a rank badge, the name and birthday, and a remaining-days badge; clicking a card selects it and syncs the dropdown
@@ -139,8 +140,12 @@ The UI shows "DisplayName · EnglishName", and the English name doubles as the i
 
 ### Adding a character
 
-1. Add the same key to **both** `characters_birthday_data.json` and `characters_name.json`
-2. If you also maintain the APK build, sync `BIRTHDAYS` and `NAMES` in [apk/data.py](apk/data.py)
+**Option 1 — inside the app.** Click **＋ Add character** in the top-right corner, fill in the key, display name and birthday, then save. The desktop build immediately rewrites both JSON files; the APK keeps custom characters in the device's local storage (it does not touch the embedded `data.py`, and they are removed when the app is uninstalled). Either way the UI refreshes right away with the new character selected.
+
+- The key is required and must not collide with an existing one. The display name may be left empty — the key is then used as the name.
+- The birthday accepts `MM-DD`, `M-D`, `MM/DD`, `MM.DD` and similar; it is normalized to `MM-DD` on save. `02-29` is valid.
+
+**Option 2 — edit the JSON by hand.** Add the same key to **both** `characters_birthday_data.json` and `characters_name.json`; if you also maintain the APK build, sync `BIRTHDAYS` and `NAMES` in [apk/data.py](apk/data.py).
 
 The order of entries in the JSON files does not matter — everything is re-sorted by remaining days at startup.
 

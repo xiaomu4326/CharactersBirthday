@@ -18,9 +18,12 @@ class Translator:
         with open(path, "r", encoding="utf-8") as file:
             self._text = json.load(file)
 
-    def translate(self, key, **kwargs):
-        """取 key 对应的文案，可用关键字参数填充占位符（如 {n}）。"""
-        text = self._text.get(key, key)
+    def translate(self, text_key, **kwargs):
+        """取 text_key 对应的文案，可用关键字参数填充占位符（如 {n}）。
+
+        参数名不用 key，是为了让文案占位符可以直接叫 {key}。
+        """
+        text = self._text.get(text_key, text_key)
         if kwargs:
             return text.format(**kwargs)
         return text

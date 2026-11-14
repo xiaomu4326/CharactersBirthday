@@ -8,6 +8,8 @@
 """
 
 import asyncio
+import json
+import re
 from datetime import date, datetime
 
 import flet as ft
@@ -39,6 +41,7 @@ RANK_BG = "#88C0D0"      # 序号底色
 RANK_FG = "#2E3440"      # 序号文字
 ACCENT = "#5E81AC"       # 强调色 / 剩余天数徽章（常规）
 ACCENT_TODAY = "#D08770"  # 剩余天数徽章（今天生日）
+ERROR = "#BF616A"        # 表单错误提示文字
 
 # ---------- 字号（与 theme.py 一致） ----------
 FONT_TITLE = 16
@@ -52,10 +55,32 @@ FONT_COUNTDOWN = 18
 LANG_ORDER = ["zh", "en", "ja"]
 LANG_NAMES = {"zh": "中文", "en": "English", "ja": "日本語"}
 
+# 自定义角色（应用内添加）在客户端存储中的键名
+CUSTOM_STORAGE_KEY = "custom_characters"
+
 
 def _next_lang(current):
     """返回切换顺序中的下一个语言代码。"""
     return LANG_ORDER[(LANG_ORDER.index(current) + 1) % len(LANG_ORDER)]
+
+
+def _normalize_birthday(text):
+    """把生日文本规范成 "MM-DD"（允许 4-1、04/01 这类写法）；非法时返回 None。"""
+    match = re.fullmatch(r"\s*(\d{1,2})\s*[-/.]\s*(\d{1,2})\s*", text or "")
+    if match is None:
+        return None
+    month, day = int(match.group(1)), int(match.group(2))
+    try:
+        # 用闰年（2000）校验，顺带允许 02-29
+        date(2000, month, day)
+    except ValueError:
+        return None
+    return f"{month:02d}-{day:02d}"
+
+
+def _storage(page):
+    """取客户端的键值存储：Flet 1.0 起 client_storage 更名为 shared_preferences。"""
+    return getattr(page, "shared_preferences", None) or getattr(page, "client_storage", None)
 
 
 def _make_date(year, month, day):
@@ -144,6 +169,7 @@ def main(page: ft.Page):
         "top": [],
         "top_count": 0,
         "notified_date": None,
+        "custom": {},      # 应用内添加的角色：键名 -> {"name", "birthday"}
     }
     state["today_key"] = f"{state['today'].month:02d}-{state['today'].day:02d}"
 
@@ -153,9 +179,12 @@ def main(page: ft.Page):
     card_refs = {}     # en -> (card, rank_box, rank_text)
     card_badges = []   # (badge_box, badge_text, en)
 
-    def t(key, **kwargs):
-        """取 key 对应的文案，可用关键字参数填充占位符（如 {n}）。"""
-        text = TRANSLATIONS[state["lang"]].get(key, key)
+    def t(text_key, **kwargs):
+        """取 text_key 对应的文案，可用关键字参数填充占位符（如 {n}）。
+
+        参数名不用 key，是为了让文案占位符可以直接叫 {key}。
+        """
+        text = TRANSLATIONS[state["lang"]].get(text_key, text_key)
         if kwargs:
             return text.format(**kwargs)
         return text
@@ -177,6 +206,12 @@ def main(page: ft.Page):
     lang_button = ft.TextButton(
         content=ft.Text(LANG_NAMES[state["lang"]], size=FONT_META, color=HEADER_SUB),
         on_click=lambda e: _toggle_lang(),
+        style=ft.ButtonStyle(color=HEADER_SUB),
+    )
+
+    add_button = ft.TextButton(
+        content=ft.Text("", size=FONT_META, color=HEADER_SUB),
+        on_click=lambda e: _open_add_dialog(),
         style=ft.ButtonStyle(color=HEADER_SUB),
     )
 
@@ -343,6 +378,7 @@ def main(page: ft.Page):
         section.value = t("preview_title", top=state["top_count"])
         footer.value = t("total_count", n=len(state["all"]), top=state["top_count"])
         lang_button.content.value = LANG_NAMES[state["lang"]]
+        add_button.content.value = f"＋ {t('add_character')}"
         _refresh_badges()
         _refresh_detail()
 
@@ -351,6 +387,130 @@ def main(page: ft.Page):
         state["lang"] = _next_lang(state["lang"])
         _apply_lang()
         page.update()
+
+    # ---------- 添加角色 ----------
+    def _open_add_dialog():
+        # 弹出「添加角色」对话框：键名 + 角色名 + 生日；保存后写入本地存储并刷新界面
+        key_field = ft.TextField(label=t("field_key"), text_size=FONT_SUB,
+                                 color=TEXT, border_color=CARD_BORDER,
+                                 filled=True, fill_color=CARD_BG,
+                                 autofocus=True)
+        name_field = ft.TextField(label=t("field_name"), text_size=FONT_SUB,
+                                  color=TEXT, border_color=CARD_BORDER,
+                                  filled=True, fill_color=CARD_BG,
+                                  hint_text=t("hint_name_default"))
+        birthday_field = ft.TextField(label=t("field_birthday"), text_size=FONT_SUB,
+                                      color=TEXT, border_color=CARD_BORDER,
+                                      filled=True, fill_color=CARD_BG,
+                                      hint_text=t("hint_birthday_format"))
+        error_text = ft.Text("", size=FONT_META, color=ERROR)
+
+        dialog = ft.AlertDialog(
+            modal=True,
+            bgcolor=CARD_BG,
+            title=ft.Text(t("add_character"), size=FONT_NAME, weight="bold",
+                          color=TEXT),
+            content=ft.Column(
+                [key_field, name_field, birthday_field, error_text],
+                spacing=8, tight=True, width=320,
+            ),
+            actions=[
+                ft.TextButton(
+                    content=ft.Text(t("btn_cancel"), size=FONT_SUB,
+                                    color=SUBTEXT),
+                    on_click=lambda e: page.pop_dialog(),
+                ),
+                ft.TextButton(
+                    content=ft.Text(t("btn_save"), size=FONT_SUB, color=ACCENT),
+                    on_click=lambda e: page.run_task(
+                        _commit_add, key_field, name_field, birthday_field,
+                        error_text,
+                    ),
+                ),
+            ],
+        )
+        page.show_dialog(dialog)
+
+    async def _commit_add(key_field, name_field, birthday_field, error_text):
+        # 校验 → 写本地存储 → 关闭弹窗并刷新界面；失败时留在弹窗内提示
+        key = (key_field.value or "").strip()
+        name = (name_field.value or "").strip()
+        birthday = _normalize_birthday(birthday_field.value)
+
+        if not key:
+            error_text.value = t("err_key_required")
+            page.update()
+            return
+        if birthday is None:
+            error_text.value = t("err_birthday_invalid")
+            page.update()
+            return
+        if key in BIRTHDAYS:
+            error_text.value = t("err_key_exists", key=key)
+            page.update()
+            return
+
+        display = name or key          # 没填角色名时用键名占位
+        state["custom"][key] = {"name": display, "birthday": birthday}
+        storage = _storage(page)
+        if storage is None:
+            state["custom"].pop(key, None)
+            error_text.value = t("err_save_failed", error="storage unavailable")
+            page.update()
+            return
+        try:
+            await storage.set(
+                CUSTOM_STORAGE_KEY,
+                json.dumps(state["custom"], ensure_ascii=False),
+            )
+        except Exception as exc:       # 存储失败则回滚，不留下半条数据
+            state["custom"].pop(key, None)
+            error_text.value = t("err_save_failed", error=str(exc))
+            page.update()
+            return
+
+        BIRTHDAYS[key] = birthday
+        NAMES[key] = display
+        page.pop_dialog()
+        _build_cards()
+        _apply_lang()
+        _select(key)
+        page.update()
+
+    async def _load_custom_characters():
+        # 启动时从客户端存储读回应用内添加的角色，并入内存数据后刷新界面
+        changed = False
+        storage = _storage(page)
+        raw = None
+        if storage is not None:
+            try:
+                raw = await storage.get(CUSTOM_STORAGE_KEY)
+            except Exception:
+                raw = None
+        if raw:
+            try:
+                stored = json.loads(raw)
+            except (TypeError, ValueError):
+                stored = {}
+            if isinstance(stored, dict):
+                for key, item in stored.items():
+                    if not isinstance(item, dict):
+                        continue
+                    birthday = _normalize_birthday(item.get("birthday", ""))
+                    if birthday is None or key in BIRTHDAYS:
+                        continue
+                    display = (item.get("name") or key).strip() or key
+                    state["custom"][key] = {"name": display, "birthday": birthday}
+                    BIRTHDAYS[key] = birthday
+                    NAMES[key] = display
+                    changed = True
+        if changed:
+            _build_cards()
+            _apply_lang()
+            if state["selected"] is not None:
+                _select(state["selected"])
+            page.update()
+        _maybe_notify()
 
     def _maybe_notify():
         # 当天有角色生日（剩余天数==0）时发一次通知；同一天只发一次
@@ -414,7 +574,7 @@ def main(page: ft.Page):
     header = ft.Container(
         content=ft.Column(
             [
-                ft.Row([lang_button], alignment=ft.MainAxisAlignment.END),
+                ft.Row([add_button, lang_button], alignment=ft.MainAxisAlignment.END),
                 title_text,
                 subtitle_text,
             ],
@@ -483,8 +643,9 @@ def main(page: ft.Page):
     _apply_lang()
     if state["selected"] is not None:
         _select(state["selected"])
-    _maybe_notify()
     page.run_task(_tick)
+    # 读回应用内添加过的角色（读完会刷新界面，并顺带做当天的生日通知）
+    page.run_task(_load_custom_characters)
     if notifications is not None:
         # 应用在前台时尽早请求通知权限（Android 13+ 运行时权限）
         page.run_task(notifications.request_permissions)

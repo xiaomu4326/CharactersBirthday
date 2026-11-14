@@ -1,7 +1,7 @@
 [project]
 name = "CharactersBirthday"
 description = "Character Birthday Countdown"
-version = "1.0.2"
+version = "1.0.3"
 
 [tool.flet.app]
 module = "main"
@@ -9,6 +9,8 @@ module = "main"
 [tool.flet]
 product = "CharactersBirthday"
 org = "com.charactersbirthday"
+# Android 的 versionCode：每次发版都要递增，系统才会认作升级
+build_number = 2
 
 # 使用仓库内的自定义构建模板：在官方模板基础上，为 flutter_local_notifications
 # 预置了 core library desugaring + multidex + desugar_jdk_libs（Android 通知所需）。

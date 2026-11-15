@@ -26,5 +26,17 @@
     "delete_confirm": "「{name}」を削除しますか？元に戻せません。",
     "btn_delete": "削除",
     "err_no_selection": "先にキャラクターを選択してください",
-    "err_delete_failed": "削除に失敗しました：{error}"
+    "err_delete_failed": "削除に失敗しました：{error}",
+    "settings": "設定",
+    "btn_close": "閉じる",
+    "btn_back": "戻る",
+    "about": "このアプリについて",
+    "about_intro": "好きなキャラクターの誕生日を小さなウィンドウに：誕生日が近い順に並べ、秒単位でカウントダウン。中国語 / 英語 / 日本語に対応し、キャラクターの追加・削除もできます。",
+    "version_label": "バージョン",
+    "github_label": "GitHub リポジトリ",
+    "btn_open_link": "リンクを開く",
+    "license_label": "ライセンス",
+    "license_text": "コード MIT ／ キャラクターデータ CC0 1.0",
+    "delete_pick": "削除するキャラクター",
+    "no_characters": "削除できるキャラクターがいません"
 }

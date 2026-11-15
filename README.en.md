@@ -29,8 +29,10 @@ Keep your favorite characters' birthdays in one small window — sorted by how s
 | Leap-day fallback | February 29 falls back to February 28 in non-leap years |
 | HiDPI support | Calls `SetProcessDpiAwareness(1)` on Windows so the UI stays crisp |
 | Birthday reminder (APK only) | Pushes a system notification on the birthday, at most once per day |
-| Add characters in-app | Click "＋ Add character" in the top-right, fill in key / name / birthday; the desktop build writes back to `data/` while the APK stores it on the device — either way the UI refreshes immediately |
-| Delete characters in-app | Select a character, click "－ Delete character" and confirm; the desktop build removes it from `data/`, while the APK records a tombstone so it stays hidden after a restart |
+| Settings page | The "Settings" button in the top-right asks what you want to do: "Add character", "Delete character" or "About", each opening its own sub-page |
+| About page | App icon, short description, version number, license info (code MIT · data CC0 1.0) and a link to the GitHub repository (opens in the browser) |
+| Add characters in-app | Settings → "Add character": fill in key / name / birthday; the desktop build writes back to `data/` while the APK stores it on the device |
+| Delete characters in-app | Settings → "Delete character": pick a character and confirm; the desktop build removes it from `data/`, while the APK records a tombstone so it stays hidden after a restart |
 
 The UI uses the soft Nord palette (defined in [theme.py](theme.py)) — clear contrast without being harsh:
 
@@ -46,7 +48,7 @@ The UI uses the soft Nord palette (defined in [theme.py](theme.py)) — clear co
 
 The window defaults to `380 × 640` (minimum `340 × 520`), is centered on screen at startup, and is split into five blocks from top to bottom:
 
-1. **Dark header** — app title, today's date, and the "Add character" / language buttons in the top-right corner
+1. **Dark header** — app title, today's date, and the "Settings" / language buttons in the top-right corner
 2. **Character picker** — a label plus a read-only dropdown (`DisplayName · EnglishName`)
 3. **Detail card** — the selected character's name, `Birthday MM-DD · EnglishName`, and a second-level countdown to the next birthday
 4. **Preview list** — "Next 5 birthdays": each card carries a rank badge, the name and birthday, and a remaining-days badge; clicking a card selects it and syncs the dropdown
@@ -94,11 +96,12 @@ CharactersBirthday/
 ├── main.py                     # Desktop entry point
 ├── window.py                   # UI assembly: header / dropdown / detail countdown / Top-5 cards / scroll area
 ├── theme.py                    # Color and font-size constants
+├── appInfo.py                  # Version and repository URL (used by the "About" page)
 ├── remainDays.py               # Remaining days, next-birthday instant, second-level countdown
 ├── fileOperations.py           # Reads the JSON files under data/
 ├── paths.py                    # Locates the app directory; works from source and under PyInstaller
 ├── translator.py               # Loads data/lang/*.json and fills placeholders
-├── data/                       # Birthdays, display names, translations
+├── data/                       # Birthdays, display names, translations, app icon (icon.png)
 ├── build.bat                   # One-command PyInstaller build
 ├── CharactersBirthday.spec     # PyInstaller config (onedir + windowed)
 ├── LICENSE                     # MIT license
@@ -141,7 +144,7 @@ The UI shows "DisplayName · EnglishName", and the English name doubles as the i
 
 ### Adding a character
 
-**Option 1 — inside the app.** Click **＋ Add character** in the top-right corner, fill in the key, display name and birthday, then save. The desktop build immediately rewrites both JSON files; the APK keeps custom characters in the device's local storage (it does not touch the embedded `data.py`, and they are removed when the app is uninstalled). Either way the UI refreshes right away with the new character selected.
+**Option 1 — inside the app.** Click **Settings** → **Add character** and fill in the key, display name and birthday on the sub-page, then save. The desktop build immediately rewrites both JSON files; the APK keeps custom characters in the device's local storage (it does not touch the embedded `data.py`, and they are removed when the app is uninstalled). Either way the UI refreshes right away with the new character selected, and the sub-page stays open so you can keep adding.
 
 - The key is required and must not collide with an existing one. The display name may be left empty — the key is then used as the name.
 - The birthday accepts `MM-DD`, `M-D`, `MM/DD`, `MM.DD` and similar; it is normalized to `MM-DD` on save. `02-29` is valid.
@@ -152,7 +155,7 @@ The order of entries in the JSON files does not matter — everything is re-sort
 
 ### Deleting a character
 
-Select the character you want to remove, click **－ Delete character**, then confirm.
+Open **Settings** → **Delete character**, pick the character on the sub-page, and confirm to remove it from the list.
 
 - **Desktop**: the key is removed from both `characters_birthday_data.json` and `characters_name.json`. This cannot be undone from the app (git can still restore the file).
 - **APK**: characters added in-app are removed from device storage; built-in characters live inside the packaged data and cannot be rewritten at runtime, so a tombstone (`deleted_characters`) is recorded instead and they stay hidden after a restart. To restore one, add it back with **＋ Add character** using the same key and fill in the birthday again — the tombstone is cleared automatically.
@@ -203,6 +206,7 @@ The repository **only tracks source code**; everything a build produces is exclu
 - To check the midnight rollover: at the end of `window.py` there is a commented-out "simulate +1 day" test block (including a test button). Uncomment it temporarily and delete it once you are done.
 - To change colors or font sizes, edit [theme.py](theme.py) (desktop) and the constants with the same names at the top of [apk/main.py](apk/main.py) (APK).
 - `_make_date` / `_make_datetime` in both `remainDays.py` and `apk/main.py` implement the leap-day fallback — keep them in sync when changing either.
+- **The version number lives in three places** and must be kept in sync: [appInfo.py](appInfo.py) (desktop "About" page), `project.version` in [apk/pyproject.toml](apk/pyproject.toml) (packaging and APK version name), and `APP_VERSION` in [apk/data.py](apk/data.py) (APK "About" page).
 
 ## Notes on the data
 

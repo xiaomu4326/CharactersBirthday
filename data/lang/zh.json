@@ -26,5 +26,17 @@
     "delete_confirm": "确定要删除「{name}」吗？此操作不可撤销。",
     "btn_delete": "删除",
     "err_no_selection": "请先选择一个角色",
-    "err_delete_failed": "删除失败：{error}"
+    "err_delete_failed": "删除失败：{error}",
+    "settings": "设置",
+    "btn_close": "关闭",
+    "btn_back": "返回",
+    "about": "关于",
+    "about_intro": "把喜欢的角色生日收进一个小窗口：按生日临近排序、精确到秒的倒计时，支持中 / 英 / 日三语，角色可以自己增删。",
+    "version_label": "版本",
+    "github_label": "GitHub 仓库",
+    "btn_open_link": "打开链接",
+    "license_label": "许可证",
+    "license_text": "代码 MIT · 角色数据 CC0 1.0",
+    "delete_pick": "选择要删除的角色",
+    "no_characters": "没有可删除的角色"
 }

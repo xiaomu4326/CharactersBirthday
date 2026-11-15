@@ -26,7 +26,7 @@ if _BaseNotifications is not None and not getattr(_BaseNotifications, "_c", None
     # 而 1.0.5 的控件在实例化时会校验 _c，缺失会抛 ValueError。这里补上。
     _BaseNotifications._c = "flet_android_notifications"
 
-from data import BIRTHDAYS, NAMES, TRANSLATIONS
+from data import APP_VERSION, BIRTHDAYS, GITHUB_URL, NAMES, TRANSLATIONS
 
 # ---------- 配色（与 theme.py 一致） ----------
 BG = "#ECEFF4"           # 页面背景
@@ -212,15 +212,9 @@ def main(page: ft.Page):
         style=ft.ButtonStyle(color=HEADER_SUB),
     )
 
-    add_button = ft.TextButton(
+    settings_button = ft.TextButton(
         content=ft.Text("", size=FONT_META, color=HEADER_SUB),
-        on_click=lambda e: _open_add_dialog(),
-        style=ft.ButtonStyle(color=HEADER_SUB),
-    )
-
-    delete_button = ft.TextButton(
-        content=ft.Text("", size=FONT_META, color=HEADER_SUB),
-        on_click=lambda e: _confirm_delete(),
+        on_click=lambda e: _open_settings(),
         style=ft.ButtonStyle(color=HEADER_SUB),
     )
 
@@ -405,8 +399,7 @@ def main(page: ft.Page):
         section.value = t("preview_title", top=state["top_count"])
         footer.value = t("total_count", n=len(state["all"]), top=state["top_count"])
         lang_button.content.value = LANG_NAMES[state["lang"]]
-        add_button.content.value = f"＋ {t('add_character')}"
-        delete_button.content.value = f"－ {t('delete_character')}"
+        settings_button.content.value = t("settings")
         _refresh_badges()
         _refresh_detail()
 
@@ -416,50 +409,197 @@ def main(page: ft.Page):
         _apply_lang()
         page.update()
 
-    # ---------- 添加角色 ----------
-    def _open_add_dialog():
-        # 弹出「添加角色」对话框：键名 + 角色名 + 生日；保存后写入本地存储并刷新界面
-        key_field = ft.TextField(label=t("field_key"), text_size=FONT_SUB,
-                                 color=TEXT, border_color=CARD_BORDER,
-                                 filled=True, fill_color=CARD_BG,
-                                 autofocus=True)
-        name_field = ft.TextField(label=t("field_name"), text_size=FONT_SUB,
-                                  color=TEXT, border_color=CARD_BORDER,
-                                  filled=True, fill_color=CARD_BG,
-                                  hint_text=t("hint_name_default"))
-        birthday_field = ft.TextField(label=t("field_birthday"), text_size=FONT_SUB,
+    # ---------- 设置：添加 / 删除角色 ----------
+    def _settings_entry(text, color, on_click):
+        # 设置菜单里的一行
+        return ft.Container(
+            content=ft.Text(text, size=FONT_SUB, color=color),
+            bgcolor=CARD_BG,
+            border=_border(1, CARD_BORDER),
+            border_radius=8,
+            padding=ft.Padding(14, 12, 14, 12),
+            on_click=on_click,
+        )
+
+    def _open_settings(view="menu"):
+        # 设置面板：先选功能（添加 / 删除），选中后再进入对应的子页
+        def _go(target):
+            page.pop_dialog()
+            _open_settings(target)
+
+        if view == "menu":
+            dialog = ft.AlertDialog(
+                modal=True,
+                bgcolor=CARD_BG,
+                title=ft.Text(t("settings"), size=FONT_NAME, weight="bold",
+                              color=TEXT),
+                content=ft.Column(
+                    [
+                        _settings_entry(f"＋ {t('add_character')}", TEXT,
+                                        lambda e: _go("add")),
+                        _settings_entry(f"－ {t('delete_character')}", ERROR,
+                                        lambda e: _go("delete")),
+                        _settings_entry(t("about"), TEXT, lambda e: _go("about")),
+                    ],
+                    spacing=8, tight=True, width=300,
+                ),
+                actions=[
+                    ft.TextButton(
+                        content=ft.Text(t("btn_close"), size=FONT_SUB,
+                                        color=SUBTEXT),
+                        on_click=lambda e: page.pop_dialog(),
+                    ),
+                ],
+            )
+        elif view == "add":
+            key_field = ft.TextField(label=t("field_key"), text_size=FONT_SUB,
+                                     color=TEXT, border_color=CARD_BORDER,
+                                     filled=True, fill_color=CARD_BG,
+                                     autofocus=True)
+            name_field = ft.TextField(label=t("field_name"), text_size=FONT_SUB,
                                       color=TEXT, border_color=CARD_BORDER,
                                       filled=True, fill_color=CARD_BG,
-                                      hint_text=t("hint_birthday_format"))
-        error_text = ft.Text("", size=FONT_META, color=ERROR)
-
-        dialog = ft.AlertDialog(
-            modal=True,
-            bgcolor=CARD_BG,
-            title=ft.Text(t("add_character"), size=FONT_NAME, weight="bold",
-                          color=TEXT),
-            content=ft.Column(
-                [key_field, name_field, birthday_field, error_text],
-                spacing=8, tight=True, width=320,
-            ),
-            actions=[
-                ft.TextButton(
-                    content=ft.Text(t("btn_cancel"), size=FONT_SUB,
-                                    color=SUBTEXT),
-                    on_click=lambda e: page.pop_dialog(),
+                                      hint_text=t("hint_name_default"))
+            birthday_field = ft.TextField(label=t("field_birthday"),
+                                          text_size=FONT_SUB,
+                                          color=TEXT, border_color=CARD_BORDER,
+                                          filled=True, fill_color=CARD_BG,
+                                          hint_text=t("hint_birthday_format"))
+            error_text = ft.Text("", size=FONT_META, color=ERROR)
+            panel_height = max(180, min(380, int((page.height or 800) * 0.4)))
+            dialog = ft.AlertDialog(
+                modal=True,
+                bgcolor=CARD_BG,
+                title=ft.Text(f"{t('settings')} · {t('add_character')}",
+                              size=FONT_NAME, weight="bold", color=TEXT),
+                content=ft.Column(
+                    [key_field, name_field, birthday_field, error_text],
+                    spacing=8, tight=True, width=320,
+                    height=panel_height, scroll=ft.ScrollMode.AUTO,
                 ),
-                ft.TextButton(
-                    content=ft.Text(t("btn_save"), size=FONT_SUB, color=ACCENT),
-                    on_click=lambda e: page.run_task(
-                        _commit_add, key_field, name_field, birthday_field,
-                        error_text,
+                actions=[
+                    ft.TextButton(
+                        content=ft.Text(t("btn_back"), size=FONT_SUB,
+                                        color=SUBTEXT),
+                        on_click=lambda e: _go("menu"),
                     ),
+                    ft.TextButton(
+                        content=ft.Text(t("btn_save"), size=FONT_SUB, color=ACCENT),
+                        on_click=lambda e: page.run_task(
+                            _commit_add, key_field, name_field,
+                            birthday_field, error_text, lambda: None,
+                        ),
+                    ),
+                ],
+            )
+        elif view == "delete":
+            delete_dropdown = ft.Dropdown(
+                label=t("delete_pick"),
+                options=[
+                    ft.dropdown.Option(key=en, text=f"{NAMES.get(en, en)} · {en}")
+                    for en in state["all"]
+                ],
+                value=state["selected"],
+                text_size=FONT_SUB,
+                fill_color=CARD_BG,
+                border_color=CARD_BORDER,
+                color=TEXT,
+                menu_height=_dropdown_menu_height(),
+                enable_filter=True,
+            )
+            delete_error = ft.Text("", size=FONT_META, color=ERROR)
+
+            def _refresh_delete_options():
+                # 删除成功后重建候选，保持在删除子页
+                current = delete_dropdown.value
+                delete_dropdown.options = [
+                    ft.dropdown.Option(key=en, text=f"{NAMES.get(en, en)} · {en}")
+                    for en in state["all"]
+                ]
+                if current not in state["all"]:
+                    delete_dropdown.value = state["all"][0] if state["all"] else None
+                delete_error.value = "" if state["all"] else t("no_characters")
+
+            def _delete(e):
+                en = delete_dropdown.value
+                if not en or en not in BIRTHDAYS:
+                    delete_error.value = t("err_no_selection")
+                    page.update()
+                    return
+                _confirm_delete(en, _refresh_delete_options)
+
+            dialog = ft.AlertDialog(
+                modal=True,
+                bgcolor=CARD_BG,
+                title=ft.Text(f"{t('settings')} · {t('delete_character')}",
+                              size=FONT_NAME, weight="bold", color=TEXT),
+                content=ft.Column(
+                    [delete_dropdown, delete_error],
+                    spacing=8, tight=True, width=320,
                 ),
-            ],
-        )
+                actions=[
+                    ft.TextButton(
+                        content=ft.Text(t("btn_back"), size=FONT_SUB,
+                                        color=SUBTEXT),
+                        on_click=lambda e: _go("menu"),
+                    ),
+                    ft.TextButton(
+                        content=ft.Text(t("btn_delete"), size=FONT_SUB, color=ERROR),
+                        on_click=_delete,
+                    ),
+                ],
+            )
+        else:   # about
+            dialog = ft.AlertDialog(
+                modal=True,
+                bgcolor=CARD_BG,
+                title=ft.Text(f"{t('settings')} · {t('about')}",
+                              size=FONT_NAME, weight="bold", color=TEXT),
+                content=ft.Column(
+                    [
+                        ft.Row(
+                            [ft.Image(src="icon.png", width=88, height=88)],
+                            alignment=ft.MainAxisAlignment.CENTER,
+                        ),
+                        ft.Text(t("about_intro"), size=FONT_SUB, color=TEXT),
+                        ft.Row(
+                            [
+                                ft.Text(t("version_label"), size=FONT_META,
+                                        color=SUBTEXT),
+                                ft.Text(APP_VERSION, size=FONT_SUB, color=TEXT),
+                            ],
+                            spacing=8,
+                        ),
+                        ft.Text(f"{t('license_label')}  {t('license_text')}",
+                                size=FONT_META, color=SUBTEXT),
+                        ft.Text(t("github_label"), size=FONT_META, color=SUBTEXT),
+                        ft.Container(
+                            content=ft.Text(GITHUB_URL, size=FONT_META,
+                                            color=ACCENT),
+                            on_click=lambda e: page.run_task(_open_github),
+                        ),
+                    ],
+                    spacing=8, tight=True, width=320,
+                ),
+                actions=[
+                    ft.TextButton(
+                        content=ft.Text(t("btn_back"), size=FONT_SUB,
+                                        color=SUBTEXT),
+                        on_click=lambda e: _go("menu"),
+                    ),
+                ],
+            )
         page.show_dialog(dialog)
 
-    async def _commit_add(key_field, name_field, birthday_field, error_text):
+    async def _open_github():
+        # 打开仓库页面；没有可用浏览器时静默失败，不影响其他功能
+        try:
+            await ft.UrlLauncher().launch_url(GITHUB_URL)
+        except Exception:
+            pass
+
+    async def _commit_add(key_field, name_field, birthday_field, error_text,
+                          stay_open=None):
         # 校验 → 写本地存储 → 关闭弹窗并刷新界面；失败时留在弹窗内提示
         key = (key_field.value or "").strip()
         name = (name_field.value or "").strip()
@@ -506,17 +646,25 @@ def main(page: ft.Page):
         state["deleted"] = new_deleted
         BIRTHDAYS[key] = birthday
         NAMES[key] = display
-        page.pop_dialog()
         _build_cards()
         _apply_lang()
         _select(key)
+        if stay_open is None:
+            page.pop_dialog()          # 独立的添加弹窗：保存后关闭
+        else:
+            # 设置面板：清空输入、刷新删除候选，保持在面板内
+            key_field.value = ""
+            name_field.value = ""
+            birthday_field.value = ""
+            error_text.value = ""
+            stay_open()
         page.update()
 
     # ---------- 删除角色 ----------
-    def _confirm_delete():
-        # 删除当前选中的角色：先弹确认框
-        en = state["selected"]
-        if en is None:
+    def _confirm_delete(en=None, after_success=None):
+        # 删除指定角色（默认取当前选中的）：先弹确认框
+        en = en if en is not None else state["selected"]
+        if en is None or en not in BIRTHDAYS:
             page.show_dialog(
                 ft.SnackBar(
                     ft.Text(t("err_no_selection"), size=FONT_SUB, color="#FFFFFF"),
@@ -538,13 +686,14 @@ def main(page: ft.Page):
                 ),
                 ft.TextButton(
                     content=ft.Text(t("btn_delete"), size=FONT_SUB, color=ERROR),
-                    on_click=lambda e: page.run_task(_commit_delete, en),
+                    on_click=lambda e: page.run_task(
+                        _commit_delete, en, after_success),
                 ),
             ],
         )
         page.show_dialog(dialog)
 
-    async def _commit_delete(en):
+    async def _commit_delete(en, after_success=None):
         # 从内存和客户端存储里移除角色；内置数据在包内不可改，只能记"墓碑"
         if en not in BIRTHDAYS:
             page.pop_dialog()
@@ -602,6 +751,8 @@ def main(page: ft.Page):
         else:
             state["selected"] = None
             _refresh_detail()
+        if after_success is not None:
+            after_success()          # 设置面板：刷新删除候选并保持打开
         page.update()
 
     async def _load_custom_characters():
@@ -723,7 +874,7 @@ def main(page: ft.Page):
     header = ft.Container(
         content=ft.Column(
             [
-                ft.Row([delete_button, add_button, lang_button],
+                ft.Row([settings_button, lang_button],
                        alignment=ft.MainAxisAlignment.END),
                 title_text,
                 subtitle_text,

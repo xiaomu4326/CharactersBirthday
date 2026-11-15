@@ -26,5 +26,17 @@
     "delete_confirm": "Delete \"{name}\"? This cannot be undone.",
     "btn_delete": "Delete",
     "err_no_selection": "Select a character first",
-    "err_delete_failed": "Delete failed: {error}"
+    "err_delete_failed": "Delete failed: {error}",
+    "settings": "Settings",
+    "btn_close": "Close",
+    "btn_back": "Back",
+    "about": "About",
+    "about_intro": "Keep your favorite characters' birthdays in one small window: sorted by how soon they are, counted down to the second, in Chinese / English / Japanese, with characters you can add or remove yourself.",
+    "version_label": "Version",
+    "github_label": "GitHub repository",
+    "btn_open_link": "Open link",
+    "license_label": "License",
+    "license_text": "Code MIT · Character data CC0 1.0",
+    "delete_pick": "Character to delete",
+    "no_characters": "No characters to delete"
 }

@@ -30,6 +30,7 @@ Keep your favorite characters' birthdays in one small window — sorted by how s
 | HiDPI support | Calls `SetProcessDpiAwareness(1)` on Windows so the UI stays crisp |
 | Birthday reminder (APK only) | Pushes a system notification on the birthday, at most once per day |
 | Add characters in-app | Click "＋ Add character" in the top-right, fill in key / name / birthday; the desktop build writes back to `data/` while the APK stores it on the device — either way the UI refreshes immediately |
+| Delete characters in-app | Select a character, click "－ Delete character" and confirm; the desktop build removes it from `data/`, while the APK records a tombstone so it stays hidden after a restart |
 
 The UI uses the soft Nord palette (defined in [theme.py](theme.py)) — clear contrast without being harsh:
 
@@ -148,6 +149,13 @@ The UI shows "DisplayName · EnglishName", and the English name doubles as the i
 **Option 2 — edit the JSON by hand.** Add the same key to **both** `characters_birthday_data.json` and `characters_name.json`; if you also maintain the APK build, sync `BIRTHDAYS` and `NAMES` in [apk/data.py](apk/data.py).
 
 The order of entries in the JSON files does not matter — everything is re-sorted by remaining days at startup.
+
+### Deleting a character
+
+Select the character you want to remove, click **－ Delete character**, then confirm.
+
+- **Desktop**: the key is removed from both `characters_birthday_data.json` and `characters_name.json`. This cannot be undone from the app (git can still restore the file).
+- **APK**: characters added in-app are removed from device storage; built-in characters live inside the packaged data and cannot be rewritten at runtime, so a tombstone (`deleted_characters`) is recorded instead and they stay hidden after a restart. To restore one, add it back with **＋ Add character** using the same key and fill in the birthday again — the tombstone is cleared automatically.
 
 ### Text and localization
 

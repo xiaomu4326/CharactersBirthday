@@ -99,6 +99,31 @@ def add_character(character_name, display_name, birthday):
     _write_json("characters_name.json", names)
     return character_name, display_name, birthday
 
+
+def remove_character(character_name):
+    """删除一个角色：同时从两个 JSON 中移除。
+
+    参数:
+        character_name: 要删除的键名。
+
+    返回:
+        True 表示确实删除了；键不存在时返回 False。
+    """
+    character_name = (character_name or "").strip()
+    if not character_name:
+        return False
+
+    birthdays = read_all_characters_birthday()
+    names = read_all_characters_names()
+    if character_name not in birthdays and character_name not in names:
+        return False
+
+    birthdays.pop(character_name, None)
+    names.pop(character_name, None)
+    _write_json("characters_birthday_data.json", birthdays)
+    _write_json("characters_name.json", names)
+    return True
+
 """if __name__ == "__main__":
     character_birthday_data = read_all_characters_birthday()
     print(character_birthday_data)

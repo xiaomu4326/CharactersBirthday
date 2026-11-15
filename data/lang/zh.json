@@ -21,5 +21,10 @@
     "err_key_required": "请填写键名",
     "err_birthday_invalid": "生日格式不正确，应为 MM-DD",
     "err_key_exists": "键名「{key}」已存在",
-    "err_save_failed": "保存失败：{error}"
+    "err_save_failed": "保存失败：{error}",
+    "delete_character": "删除角色",
+    "delete_confirm": "确定要删除「{name}」吗？此操作不可撤销。",
+    "btn_delete": "删除",
+    "err_no_selection": "请先选择一个角色",
+    "err_delete_failed": "删除失败：{error}"
 }

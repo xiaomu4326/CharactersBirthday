@@ -30,6 +30,7 @@
 | 高分屏适配 | Windows 下调用 `SetProcessDpiAwareness(1)`，避免界面发虚 |
 | 生日提醒（仅 APK） | 生日当天推送一条系统通知，同一天只发一次 |
 | 应用内添加角色 | 右上角「＋ 添加角色」填键名 / 角色名 / 生日；桌面版写回 `data/`，APK 存入设备本地存储，保存后界面立即刷新 |
+| 应用内删除角色 | 选中角色后点「－ 删除角色」并确认；桌面版同步删除 `data/` 中的记录，APK 记下「墓碑」后重启也不再显示 |
 
 界面配色统一使用 Nord 风格柔和色板（定义在 [theme.py](theme.py)），深浅分明且不刺眼：
 
@@ -148,6 +149,13 @@ CharactersBirthday/
 **方式二：手动改 JSON。** 在 `characters_birthday_data.json` 和 `characters_name.json` 中**同时**加入同名键；若同时维护 APK 版，还需要同步 [apk/data.py](apk/data.py) 里的 `BIRTHDAYS` 与 `NAMES`。
 
 JSON 的书写顺序无关紧要 —— 程序启动时会按剩余天数重新排序。
+
+### 删除角色
+
+选中要删的角色，点右上角「－ 删除角色」并确认即可。
+
+- **桌面版**：直接从 `characters_birthday_data.json` 与 `characters_name.json` 中删除该键，操作不可撤销（仓库里的数据还可以用 git 恢复）。
+- **APK 版**：应用内添加的角色会从设备存储中删除；内置角色的数据打包在应用内、运行时改不了，所以改为记一条「墓碑」（`deleted_characters`），重启后依旧不显示。想恢复就再用「＋ 添加角色」加回同一个键名并重新填写生日，墓碑会自动清除。
 
 ### 文案与多语言
 

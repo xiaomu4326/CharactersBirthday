@@ -21,5 +21,10 @@
     "err_key_required": "Key is required",
     "err_birthday_invalid": "Birthday must be in MM-DD format",
     "err_key_exists": "Key \"{key}\" already exists",
-    "err_save_failed": "Save failed: {error}"
+    "err_save_failed": "Save failed: {error}",
+    "delete_character": "Delete character",
+    "delete_confirm": "Delete \"{name}\"? This cannot be undone.",
+    "btn_delete": "Delete",
+    "err_no_selection": "Select a character first",
+    "err_delete_failed": "Delete failed: {error}"
 }

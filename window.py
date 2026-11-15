@@ -2,6 +2,7 @@ import re
 import tkinter as tk
 import tkinter.ttk as ttk
 from datetime import date
+from tkinter import messagebox
 
 import fileOperations
 import remainDays
@@ -212,6 +213,7 @@ def build_window():
         footer.config(text=t("total_count", n=len(all_characters), top=top_count))
         lang_button.config(text=LANG_NAMES[translator.lang])
         add_button.config(text=f"＋ {t('add_character')}")
+        delete_button.config(text=f"－ {t('delete_character')}")
         _refresh_badges()
         _refresh_detail()
 
@@ -318,6 +320,33 @@ def build_window():
         dialog.grab_set()
         key_entry.focus_set()
 
+    # ---------- 删除角色 ----------
+    def _delete_selected():
+        # 删除当前选中的角色：先确认，再从两个 JSON 中移除，最后重建界面
+        en = selected["en"]
+        if en is None:
+            messagebox.showinfo(t("delete_character"), t("err_no_selection"),
+                                parent=root)
+            return
+        display = names.get(en, en)
+        if not messagebox.askyesno(t("delete_character"),
+                                   t("delete_confirm", name=display),
+                                   parent=root):
+            return
+        try:
+            removed = fileOperations.remove_character(en)
+        except OSError as exc:
+            messagebox.showerror(t("delete_character"),
+                                 t("err_delete_failed", error=exc),
+                                 parent=root)
+            return
+        if not removed:
+            messagebox.showinfo(t("delete_character"), t("err_no_selection"),
+                                parent=root)
+            return
+        # 被删的角色已不存在：_reload_characters 会自动退回到最近生日的角色
+        _reload_characters()
+
     # ---------- 顶部标题栏 ----------
     header = tk.Frame(root, bg=theme.HEADER_BG)
     header.pack(fill="x")
@@ -339,6 +368,14 @@ def build_window():
                            relief="flat", bd=0, font=theme.FONT_META,
                            cursor="hand2", padx=8, pady=2)
     add_button.pack(side="right", padx=(12, 0), pady=(10, 0))
+
+    delete_button = tk.Button(topbar, command=_delete_selected,
+                              bg=theme.HEADER_BG, fg=theme.HEADER_SUB,
+                              activebackground=theme.HEADER_BG,
+                              activeforeground=theme.HEADER_FG,
+                              relief="flat", bd=0, font=theme.FONT_META,
+                              cursor="hand2", padx=8, pady=2)
+    delete_button.pack(side="right", padx=(12, 0), pady=(10, 0))
 
     title = tk.Label(header, bg=theme.HEADER_BG, fg=theme.HEADER_FG,
                      font=theme.FONT_TITLE)
@@ -493,13 +530,21 @@ def build_window():
         _bind_wheel(card_container)
 
     def _reload_characters(select_key=None):
-        """重新从 data 读取角色数据并重建界面；新增角色后调用。"""
+        """重新从 data 读取角色数据并重建界面；新增/删除角色后调用。"""
         nonlocal names
         names = fileOperations.read_all_characters_names()
         _build_cards()   # 内部会重算 characters / all_characters / top_count，并刷新下拉框
         _apply_lang()    # 刷新日期、统计与徽章文案
-        if select_key is not None:
+        if select_key is not None and select_key in all_characters:
             _select(select_key)
+            return
+        # 选中的角色已不存在（刚被删除）：退回最近生日的角色；一个都不剩就清空
+        fallback = characters[0][0] if characters else None
+        if fallback is None:
+            selected["en"] = None
+            _refresh_detail()
+        else:
+            _select(fallback)
 
     # 初次构建卡片
     _build_cards()

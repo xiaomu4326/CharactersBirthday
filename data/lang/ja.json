@@ -21,5 +21,10 @@
     "err_key_required": "キーを入力してください",
     "err_birthday_invalid": "誕生日の形式が正しくありません（MM-DD）",
     "err_key_exists": "キー「{key}」は既に存在します",
-    "err_save_failed": "保存に失敗しました：{error}"
+    "err_save_failed": "保存に失敗しました：{error}",
+    "delete_character": "キャラクター削除",
+    "delete_confirm": "「{name}」を削除しますか？元に戻せません。",
+    "btn_delete": "削除",
+    "err_no_selection": "先にキャラクターを選択してください",
+    "err_delete_failed": "削除に失敗しました：{error}"
 }

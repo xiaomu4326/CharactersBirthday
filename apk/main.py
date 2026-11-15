@@ -57,6 +57,8 @@ LANG_NAMES = {"zh": "中文", "en": "English", "ja": "日本語"}
 
 # 自定义角色（应用内添加）在客户端存储中的键名
 CUSTOM_STORAGE_KEY = "custom_characters"
+# 已删除的内置角色（墓碑）：内置数据随包分发不能改，只能记下"别显示它"
+DELETED_STORAGE_KEY = "deleted_characters"
 
 
 def _next_lang(current):
@@ -170,6 +172,7 @@ def main(page: ft.Page):
         "top_count": 0,
         "notified_date": None,
         "custom": {},      # 应用内添加的角色：键名 -> {"name", "birthday"}
+        "deleted": set(),  # 已删除的内置角色键名（重启后也不显示）
     }
     state["today_key"] = f"{state['today'].month:02d}-{state['today'].day:02d}"
 
@@ -215,7 +218,21 @@ def main(page: ft.Page):
         style=ft.ButtonStyle(color=HEADER_SUB),
     )
 
+    delete_button = ft.TextButton(
+        content=ft.Text("", size=FONT_META, color=HEADER_SUB),
+        on_click=lambda e: _confirm_delete(),
+        style=ft.ButtonStyle(color=HEADER_SUB),
+    )
+
     select_label = ft.Text("", size=FONT_SUB, color=SUBTEXT)
+
+    def _dropdown_menu_height():
+        # 菜单最多占屏幕高度的 40%（夹在 140~420 dp 之间）。
+        # 不限制时，角色一多菜单会往下铺满并超出屏幕，最下面的条目既看不到也点不到；
+        # 显式给高度后，菜单内部可滚动。
+        screen_height = page.height or 800
+        return max(140, min(int(screen_height * 0.4), 420))
+
     dropdown = ft.Dropdown(
         options=[],
         on_select=lambda e: _select(e.control.value),
@@ -224,7 +241,17 @@ def main(page: ft.Page):
         border_color=CARD_BORDER,
         color=TEXT,
         expand=True,
+        menu_height=_dropdown_menu_height(),
+        # 角色很多时可以直接输入名字筛选，不用在长列表里翻
+        enable_filter=True,
     )
+
+    def _sync_dropdown_menu_height():
+        # 屏幕尺寸变化（首次布局完成 / 旋转 / 分屏）后重新计算菜单高度
+        height = _dropdown_menu_height()
+        if dropdown.menu_height != height:
+            dropdown.menu_height = height
+            page.update()
 
     detail_name = ft.Text("", size=FONT_NAME, weight="bold", color=TEXT)
     detail_caption = ft.Text("", size=FONT_META, color=SUBTEXT)
@@ -379,6 +406,7 @@ def main(page: ft.Page):
         footer.value = t("total_count", n=len(state["all"]), top=state["top_count"])
         lang_button.content.value = LANG_NAMES[state["lang"]]
         add_button.content.value = f"＋ {t('add_character')}"
+        delete_button.content.value = f"－ {t('delete_character')}"
         _refresh_badges()
         _refresh_detail()
 
@@ -451,24 +479,31 @@ def main(page: ft.Page):
             return
 
         display = name or key          # 没填角色名时用键名占位
-        state["custom"][key] = {"name": display, "birthday": birthday}
+        # 先在副本上算好，存储成功后再落到内存，避免写盘失败留下半条数据
+        new_custom = dict(state["custom"])
+        new_custom[key] = {"name": display, "birthday": birthday}
+        new_deleted = set(state["deleted"]) - {key}   # 重新添加：顺手清掉墓碑
         storage = _storage(page)
         if storage is None:
-            state["custom"].pop(key, None)
             error_text.value = t("err_save_failed", error="storage unavailable")
             page.update()
             return
         try:
             await storage.set(
                 CUSTOM_STORAGE_KEY,
-                json.dumps(state["custom"], ensure_ascii=False),
+                json.dumps(new_custom, ensure_ascii=False),
             )
-        except Exception as exc:       # 存储失败则回滚，不留下半条数据
-            state["custom"].pop(key, None)
+            await storage.set(
+                DELETED_STORAGE_KEY,
+                json.dumps(sorted(new_deleted), ensure_ascii=False),
+            )
+        except Exception as exc:       # 存储失败则放弃，不留下半条数据
             error_text.value = t("err_save_failed", error=str(exc))
             page.update()
             return
 
+        state["custom"] = new_custom
+        state["deleted"] = new_deleted
         BIRTHDAYS[key] = birthday
         NAMES[key] = display
         page.pop_dialog()
@@ -477,16 +512,113 @@ def main(page: ft.Page):
         _select(key)
         page.update()
 
+    # ---------- 删除角色 ----------
+    def _confirm_delete():
+        # 删除当前选中的角色：先弹确认框
+        en = state["selected"]
+        if en is None:
+            page.show_dialog(
+                ft.SnackBar(
+                    ft.Text(t("err_no_selection"), size=FONT_SUB, color="#FFFFFF"),
+                    bgcolor=ACCENT_TODAY,
+                )
+            )
+            return
+        dialog = ft.AlertDialog(
+            modal=True,
+            bgcolor=CARD_BG,
+            title=ft.Text(t("delete_character"), size=FONT_NAME, weight="bold",
+                          color=TEXT),
+            content=ft.Text(t("delete_confirm", name=NAMES.get(en, en)),
+                            size=FONT_SUB, color=TEXT),
+            actions=[
+                ft.TextButton(
+                    content=ft.Text(t("btn_cancel"), size=FONT_SUB, color=SUBTEXT),
+                    on_click=lambda e: page.pop_dialog(),
+                ),
+                ft.TextButton(
+                    content=ft.Text(t("btn_delete"), size=FONT_SUB, color=ERROR),
+                    on_click=lambda e: page.run_task(_commit_delete, en),
+                ),
+            ],
+        )
+        page.show_dialog(dialog)
+
+    async def _commit_delete(en):
+        # 从内存和客户端存储里移除角色；内置数据在包内不可改，只能记"墓碑"
+        if en not in BIRTHDAYS:
+            page.pop_dialog()
+            return
+
+        new_custom = dict(state["custom"])
+        new_deleted = set(state["deleted"])
+        if en in new_custom:
+            new_custom.pop(en)      # 应用内添加的角色：直接从自定义里去掉
+        else:
+            new_deleted.add(en)     # 内置角色：记墓碑，重启后不再显示
+
+        storage = _storage(page)
+        if storage is None:
+            page.show_dialog(
+                ft.SnackBar(
+                    ft.Text(t("err_delete_failed", error="storage unavailable"),
+                            size=FONT_SUB, color="#FFFFFF"),
+                    bgcolor=ACCENT_TODAY,
+                )
+            )
+            return
+        try:
+            await storage.set(
+                CUSTOM_STORAGE_KEY,
+                json.dumps(new_custom, ensure_ascii=False),
+            )
+            await storage.set(
+                DELETED_STORAGE_KEY,
+                json.dumps(sorted(new_deleted), ensure_ascii=False),
+            )
+        except Exception as exc:
+            page.show_dialog(
+                ft.SnackBar(
+                    ft.Text(t("err_delete_failed", error=str(exc)),
+                            size=FONT_SUB, color="#FFFFFF"),
+                    bgcolor=ACCENT_TODAY,
+                )
+            )
+            return
+
+        state["custom"] = new_custom
+        state["deleted"] = new_deleted
+        BIRTHDAYS.pop(en, None)
+        NAMES.pop(en, None)
+        page.pop_dialog()
+        _build_cards()
+        _apply_lang()
+        # 删掉的正好是当前选中项：回退到最近生日的角色，一个不剩就清空
+        fallback = state["top"][0][0] if state["top"] else (
+            state["all"][0] if state["all"] else None
+        )
+        if fallback is not None:
+            _select(fallback)
+        else:
+            state["selected"] = None
+            _refresh_detail()
+        page.update()
+
     async def _load_custom_characters():
-        # 启动时从客户端存储读回应用内添加的角色，并入内存数据后刷新界面
+        # 启动时读回：应用内添加的角色 + 已删除的内置角色（墓碑），并入内存后刷新界面
         changed = False
         storage = _storage(page)
         raw = None
+        raw_deleted = None
         if storage is not None:
             try:
                 raw = await storage.get(CUSTOM_STORAGE_KEY)
             except Exception:
                 raw = None
+            try:
+                raw_deleted = await storage.get(DELETED_STORAGE_KEY)
+            except Exception:
+                raw_deleted = None
         if raw:
             try:
                 stored = json.loads(raw)
@@ -504,6 +636,19 @@ def main(page: ft.Page):
                     BIRTHDAYS[key] = birthday
                     NAMES[key] = display
                     changed = True
+        if raw_deleted:
+            try:
+                deleted = json.loads(raw_deleted)
+            except (TypeError, ValueError):
+                deleted = []
+            if isinstance(deleted, list):
+                for name in deleted:
+                    if not isinstance(name, str) or name in state["deleted"]:
+                        continue
+                    state["deleted"].add(name)
+                    if BIRTHDAYS.pop(name, None) is not None:
+                        NAMES.pop(name, None)
+                        changed = True
         if changed:
             _build_cards()
             _apply_lang()
@@ -564,6 +709,10 @@ def main(page: ft.Page):
                 if state["selected"] is not None:
                     _select(state["selected"])
                 _maybe_notify()
+            # 页面高度可能要等首帧之后才拿得到，这里兜底同步一次菜单高度（无变化时不会触发更新）
+            height = _dropdown_menu_height()
+            if dropdown.menu_height != height:
+                dropdown.menu_height = height
             page.update()
             await asyncio.sleep(1)
 
@@ -574,7 +723,8 @@ def main(page: ft.Page):
     header = ft.Container(
         content=ft.Column(
             [
-                ft.Row([add_button, lang_button], alignment=ft.MainAxisAlignment.END),
+                ft.Row([delete_button, add_button, lang_button],
+                       alignment=ft.MainAxisAlignment.END),
                 title_text,
                 subtitle_text,
             ],
@@ -643,6 +793,10 @@ def main(page: ft.Page):
     _apply_lang()
     if state["selected"] is not None:
         _select(state["selected"])
+    # 首帧渲染后才知道真实窗口高度：立即算一次，之后旋转/分屏再跟着更新
+    page.on_resize = lambda e: _sync_dropdown_menu_height()
+    page.update()
+    _sync_dropdown_menu_height()
     page.run_task(_tick)
     # 读回应用内添加过的角色（读完会刷新界面，并顺带做当天的生日通知）
     page.run_task(_load_custom_characters)

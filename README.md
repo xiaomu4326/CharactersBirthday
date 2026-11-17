@@ -34,7 +34,7 @@
 | 应用内添加角色 | 设置页 →「添加角色」填键名 / 角色名 / 生日；桌面版写回 `data/`，APK 存入设备本地存储 |
 | 应用内删除角色 | 设置页 →「删除角色」选择角色并确认；桌面版同步删除 `data/` 中的记录，APK 记下「墓碑」后重启也不再显示 |
 
-界面配色统一使用 Nord 风格柔和色板（定义在 [theme.py](theme.py)），深浅分明且不刺眼：
+界面配色统一使用 Nord 风格柔和色板（定义在 [app/theme.py](app/theme.py)），深浅分明且不刺眼：
 
 | 用途 | 色值 |
 | --- | --- |
@@ -77,7 +77,7 @@ xcopy /E /I /Y data "dist\CharactersBirthday\data"
 
 产物位于 `dist\CharactersBirthday\`，整个文件夹可复制到任意位置运行。
 
-**关键点**：`data\` 必须与 exe 同级。打包后 [paths.py](paths.py) 通过 `sys.frozen` 判断运行方式 —— 冻结状态下取 `sys.executable` 所在目录，源码运行时取 `paths.py` 所在目录，两种方式共用同一套相对路径逻辑，所以 exe 目录里务必带上 `data`。
+**关键点**：`data\` 必须与 exe 同级。打包后 [app/paths.py](app/paths.py) 通过 `sys.frozen` 判断运行方式 —— 冻结状态下取 `sys.executable` 所在目录，源码运行时取 `app/` 的上一级（项目根），两种方式共用同一套相对路径逻辑，所以 exe 目录里务必带上 `data`。
 
 ### 打包 Android APK
 
@@ -93,14 +93,16 @@ flet build apk ./apk --arch arm64-v8a --yes --skip-flutter-doctor
 
 ```
 CharactersBirthday/
-├── main.py                     # 桌面版入口
-├── window.py                   # 界面组装：标题栏 / 下拉框 / 详情倒计时 / Top5 卡片 / 滚动区
-├── theme.py                    # 配色与字号常量
-├── appInfo.py                  # 版本号与仓库地址（「关于」页使用）
-├── remainDays.py               # 剩余天数、下次生日时刻、秒级倒计时
-├── fileOperations.py           # 读取 data/ 下的 JSON
-├── paths.py                    # 定位程序目录，兼容源码运行与 PyInstaller
-├── translator.py               # 读取 data/lang/*.json 并填充占位符
+├── main.py                     # 桌面版入口（只有这一行是启动代码）
+├── app/                        # 桌面版实现，全部逻辑都在这个包里
+│   ├── __init__.py
+│   ├── window.py               # 界面组装：标题栏 / 下拉框 / 详情倒计时 / Top5 卡片 / 滚动区
+│   ├── theme.py                # 配色与字号常量
+│   ├── appInfo.py              # 版本号与仓库地址（「关于」页使用）
+│   ├── remainDays.py           # 剩余天数、下次生日时刻、秒级倒计时
+│   ├── fileOperations.py       # 读取 data/ 下的 JSON
+│   ├── paths.py                # 定位程序目录，兼容源码运行与 PyInstaller
+│   └── translator.py           # 读取 data/lang/*.json 并填充占位符
 ├── data/                       # 角色生日、角色名、三语文案、应用图标（icon.png）
 ├── build.bat                   # PyInstaller 一键打包
 ├── CharactersBirthday.spec     # PyInstaller 配置（onedir + windowed）
@@ -173,7 +175,7 @@ JSON 的书写顺序无关紧要 —— 程序启动时会按剩余天数重新�
 **新增一门语言**需要改三处：
 
 1. 新建 `data/lang/xx.json`（键与 `zh.json` 保持一致）
-2. [window.py](window.py) 顶部的 `LANG_ORDER` 与 `LANG_NAMES`
+2. [app/window.py](app/window.py) 顶部的 `LANG_ORDER` 与 `LANG_NAMES`
 3. APK 版：[apk/main.py](apk/main.py) 的 `LANG_ORDER` / `LANG_NAMES`，以及 [apk/data.py](apk/data.py) 的 `TRANSLATIONS`
 
 > `birthday_notification`（生日通知文案）是 APK 版独有的键，只存在于 `apk/data.py`，不在 `data/lang/*.json` 中。
@@ -203,10 +205,10 @@ JSON 的书写顺序无关紧要 —— 程序启动时会按剩余天数重新�
 
 ## 开发提示
 
-- 想验证跨天重排效果：`window.py` 末尾有一段被注释掉的「模拟日期 +1 天」测试代码（含一个测试按钮），临时取消注释即可，验证完记得删掉。
-- 修改配色或字号只需改 [theme.py](theme.py)（桌面版）与 [apk/main.py](apk/main.py) 顶部的同名常量（APK 版）。
-- `remainDays.py` 与 `apk/main.py` 里的 `_make_date` / `_make_datetime` 都做了闰日回退，改动时请一并同步。
-- **版本号有三处需要同步**：[appInfo.py](appInfo.py)（桌面版「关于」页）、[apk/pyproject.toml](apk/pyproject.toml) 的 `project.version`（打包与 APK 版本名）、[apk/data.py](apk/data.py) 的 `APP_VERSION`（APK「关于」页）。
+- 想验证跨天重排效果：`app/window.py` 末尾有一段被注释掉的「模拟日期 +1 天」测试代码（含一个测试按钮），临时取消注释即可，验证完记得删掉。
+- 修改配色或字号只需改 [app/theme.py](app/theme.py)（桌面版）与 [apk/main.py](apk/main.py) 顶部的同名常量（APK 版）。
+- `app/remainDays.py` 与 `apk/main.py` 里的 `_make_date` / `_make_datetime` 都做了闰日回退，改动时请一并同步。
+- **版本号有三处需要同步**：[app/appInfo.py](app/appInfo.py)（桌面版「关于」页）、[apk/pyproject.toml](apk/pyproject.toml) 的 `project.version`（打包与 APK 版本名）、[apk/data.py](apk/data.py) 的 `APP_VERSION`（APK「关于」页）。
 
 ## 数据说明
 

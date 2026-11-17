@@ -2,7 +2,7 @@ import json
 import os
 import tempfile
 
-import paths
+from . import paths
 
 
 def _data_file(relative_path):

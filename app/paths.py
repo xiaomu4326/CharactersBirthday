@@ -5,13 +5,14 @@ import sys
 
 
 def app_dir():
-    """返回程序所在目录：
-    - 打包后为 exe 所在目录（data 与 exe 同级）；
-    - 源码运行时为 paths.py 所在目录。
+    """返回程序所在目录（data 目录与它同级）：
+    - 打包后为 exe 所在目录；
+    - 源码运行时为 app 包的上一级（项目根目录）。
     """
     if getattr(sys, "frozen", False):
         return os.path.dirname(sys.executable)
-    return os.path.dirname(os.path.abspath(__file__))
+    package_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.dirname(package_dir)
 
 
 def data_dir():

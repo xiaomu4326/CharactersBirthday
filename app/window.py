@@ -6,12 +6,8 @@ import webbrowser
 from datetime import date
 from tkinter import messagebox
 
-import appInfo
-import fileOperations
-import paths
-import remainDays
-import theme
-from translator import Translator
+from . import appInfo, fileOperations, paths, remainDays, theme
+from .translator import Translator
 
 # 让 Windows 高分屏显示更清晰
 try:

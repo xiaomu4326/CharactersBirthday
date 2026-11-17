@@ -3,7 +3,7 @@
 import json
 import os
 
-import paths
+from . import paths
 
 
 class Translator:

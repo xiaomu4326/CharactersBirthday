@@ -34,7 +34,7 @@ Keep your favorite characters' birthdays in one small window — sorted by how s
 | Add characters in-app | Settings → "Add character": fill in key / name / birthday; the desktop build writes back to `data/` while the APK stores it on the device |
 | Delete characters in-app | Settings → "Delete character": pick a character and confirm; the desktop build removes it from `data/`, while the APK records a tombstone so it stays hidden after a restart |
 
-The UI uses the soft Nord palette (defined in [theme.py](theme.py)) — clear contrast without being harsh:
+The UI uses the soft Nord palette (defined in [app/theme.py](app/theme.py)) — clear contrast without being harsh:
 
 | Purpose | Color |
 | --- | --- |
@@ -77,7 +77,7 @@ xcopy /E /I /Y data "dist\CharactersBirthday\data"
 
 The output lands in `dist\CharactersBirthday\`; the whole folder can be copied anywhere and run from there.
 
-**Key detail**: `data\` must sit next to the exe. After packaging, [paths.py](paths.py) detects how it is running through `sys.frozen` — when frozen it uses the directory of `sys.executable`, when running from source the directory of `paths.py`. Both modes share the same relative-path logic, so always ship `data` inside the exe folder.
+**Key detail**: `data\` must sit next to the exe. After packaging, [app/paths.py](app/paths.py) detects how it is running through `sys.frozen` — when frozen it uses the directory of `sys.executable`, when running from source the parent of `app/` (the project root). Both modes share the same relative-path logic, so always ship `data` inside the exe folder.
 
 ### Build the Android APK
 
@@ -93,14 +93,16 @@ See [apk/README.md](apk/README.md) for details.
 
 ```
 CharactersBirthday/
-├── main.py                     # Desktop entry point
-├── window.py                   # UI assembly: header / dropdown / detail countdown / Top-5 cards / scroll area
-├── theme.py                    # Color and font-size constants
-├── appInfo.py                  # Version and repository URL (used by the "About" page)
-├── remainDays.py               # Remaining days, next-birthday instant, second-level countdown
-├── fileOperations.py           # Reads the JSON files under data/
-├── paths.py                    # Locates the app directory; works from source and under PyInstaller
-├── translator.py               # Loads data/lang/*.json and fills placeholders
+├── main.py                     # Desktop entry point (the only startup code)
+├── app/                        # Desktop implementation — all logic lives in this package
+│   ├── __init__.py
+│   ├── window.py               # UI assembly: header / dropdown / detail countdown / Top-5 cards / scroll area
+│   ├── theme.py                # Color and font-size constants
+│   ├── appInfo.py              # Version and repository URL (used by the "About" page)
+│   ├── remainDays.py           # Remaining days, next-birthday instant, second-level countdown
+│   ├── fileOperations.py       # Reads the JSON files under data/
+│   ├── paths.py                # Locates the app directory; works from source and under PyInstaller
+│   └── translator.py           # Loads data/lang/*.json and fills placeholders
 ├── data/                       # Birthdays, display names, translations, app icon (icon.png)
 ├── build.bat                   # One-command PyInstaller build
 ├── CharactersBirthday.spec     # PyInstaller config (onedir + windowed)
@@ -173,7 +175,7 @@ Open **Settings** → **Delete character**, pick the character on the sub-page, 
 **Adding a language** takes three changes:
 
 1. Create `data/lang/xx.json` (same keys as `zh.json`)
-2. `LANG_ORDER` and `LANG_NAMES` near the top of [window.py](window.py)
+2. `LANG_ORDER` and `LANG_NAMES` near the top of [app/window.py](app/window.py)
 3. APK: `LANG_ORDER` / `LANG_NAMES` in [apk/main.py](apk/main.py), plus `TRANSLATIONS` in [apk/data.py](apk/data.py)
 
 > `birthday_notification` (the birthday notification text) is an APK-only key: it lives in `apk/data.py` and is not part of `data/lang/*.json`.
@@ -203,10 +205,10 @@ The repository **only tracks source code**; everything a build produces is exclu
 
 ## Development notes
 
-- To check the midnight rollover: at the end of `window.py` there is a commented-out "simulate +1 day" test block (including a test button). Uncomment it temporarily and delete it once you are done.
-- To change colors or font sizes, edit [theme.py](theme.py) (desktop) and the constants with the same names at the top of [apk/main.py](apk/main.py) (APK).
-- `_make_date` / `_make_datetime` in both `remainDays.py` and `apk/main.py` implement the leap-day fallback — keep them in sync when changing either.
-- **The version number lives in three places** and must be kept in sync: [appInfo.py](appInfo.py) (desktop "About" page), `project.version` in [apk/pyproject.toml](apk/pyproject.toml) (packaging and APK version name), and `APP_VERSION` in [apk/data.py](apk/data.py) (APK "About" page).
+- To check the midnight rollover: at the end of `app/window.py` there is a commented-out "simulate +1 day" test block (including a test button). Uncomment it temporarily and delete it once you are done.
+- To change colors or font sizes, edit [app/theme.py](app/theme.py) (desktop) and the constants with the same names at the top of [apk/main.py](apk/main.py) (APK).
+- `_make_date` / `_make_datetime` in both `app/remainDays.py` and `apk/main.py` implement the leap-day fallback — keep them in sync when changing either.
+- **The version number lives in three places** and must be kept in sync: [app/appInfo.py](app/appInfo.py) (desktop "About" page), `project.version` in [apk/pyproject.toml](apk/pyproject.toml) (packaging and APK version name), and `APP_VERSION` in [apk/data.py](apk/data.py) (APK "About" page).
 
 ## Notes on the data
 

@@ -1,6 +1,6 @@
 """程序主入口：启动角色生日倒计时图形界面。"""
 
-import window
+from app import window
 
 
 def main():

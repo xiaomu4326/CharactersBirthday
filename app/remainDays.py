@@ -1,5 +1,6 @@
-import fileOperations
 from datetime import date, datetime
+
+from . import fileOperations
 
 
 def get_selected_characters_remaining_days(character_name):

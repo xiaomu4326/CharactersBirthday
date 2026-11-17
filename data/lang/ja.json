@@ -37,6 +37,7 @@
     "btn_open_link": "リンクを開く",
     "license_label": "ライセンス",
     "license_text": "コード MIT ／ キャラクターデータ CC0 1.0",
+    "no_such_date": "存在しない日付",
     "delete_pick": "削除するキャラクター",
     "no_characters": "削除できるキャラクターがいません"
 }

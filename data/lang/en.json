@@ -37,6 +37,7 @@
     "btn_open_link": "Open link",
     "license_label": "License",
     "license_text": "Code MIT · Character data CC0 1.0",
+    "no_such_date": "No such date",
     "delete_pick": "Character to delete",
     "no_characters": "No characters to delete"
 }

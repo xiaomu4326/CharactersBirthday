@@ -27,6 +27,7 @@ Keep your favorite characters' birthdays in one small window — sorted by how s
 | Automatic midnight rollover | After midnight the cards are rebuilt and the date and labels refreshed — no restart needed |
 | Three languages | The top-right button cycles 中文 → English → 日本語 |
 | Leap-day fallback | February 29 falls back to February 28 in non-leap years |
+| Fictional dates | In-setting birthdays like August 32 still count down, rolling over at midnight on September 1 |
 | HiDPI support | Calls `SetProcessDpiAwareness(1)` on Windows so the UI stays crisp |
 | Birthday reminder (APK only) | Pushes a system notification on the birthday, at most once per day |
 | Settings page | The "Settings" button in the top-right asks what you want to do: "Add character", "Delete character" or "About", each opening its own sub-page |
@@ -52,7 +53,7 @@ The window defaults to `380 × 640` (minimum `340 × 520`), is centered on scree
 2. **Character picker** — a label plus a read-only dropdown (`DisplayName · EnglishName`)
 3. **Detail card** — the selected character's name, `Birthday MM-DD · EnglishName`, and a second-level countdown to the next birthday
 4. **Preview list** — "Next 5 birthdays": each card carries a rank badge, the name and birthday, and a remaining-days badge; clicking a card selects it and syncs the dropdown
-5. **Footer summary** — for example "28 characters · showing top 5 by upcoming birthday"
+5. **Footer summary** — for example "29 characters · showing top 5 by upcoming birthday"
 
 ## Quick start
 
@@ -131,6 +132,8 @@ The two versions are **completely independent**: the desktop build never referen
 ```
 
 If a character has no birthday, it still appears in the dropdown but is sorted last and its remaining days show as blank.
+
+If a character's in-setting birthday does not exist in the real calendar (for example 月見ヤチヨ from 超かぐや姫！ is officially **August 32**), just write it as `MM-DD` — `08-32`. The app treats it as the moment right after August 31 (September 1, 00:00) for the countdown: on August 31 it shows 1 day left, and at midnight on September 1 it rolls over to next year — so that "birthday" is never actually reached and never shows "today". The add dialog accepts days 1–32, so `8-32` can be entered directly.
 
 ### Display names
 
@@ -217,7 +220,7 @@ Birthday data was compiled from public sources and is intended for personal use 
 The data itself is dedicated to the public domain under CC0 1.0 and is free to reuse — see [data/LICENSE](data/LICENSE).
 
 <details>
-<summary><b>Bundled characters (28, grouped by source work)</b></summary>
+<summary><b>Bundled characters (29, grouped by source work)</b></summary>
 
 | English name (JSON key) | Display name | Birthday | Source work (official site) |
 | --- | --- | --- | --- |
@@ -248,6 +251,7 @@ The data itself is dedicated to the public domain under CC0 1.0 and is free to r
 | `KagariMimi` | カガリ・ミミ | 12-03 | [きみが死ぬまで恋をしたい](https://kimishinu-anime.com/) |
 | `SakayoriIroha` | 酒寄彩葉 | 05-11 | [超かぐや姫！](https://www.cho-kaguyahime.com/) |
 | `Kaguya` | かぐや | 07-12 | [超かぐや姫！](https://www.cho-kaguyahime.com/) |
+| `RunamiYachiyo` | 月見ヤチヨ | 08-32 | [超かぐや姫！](https://www.cho-kaguyahime.com/) |
 | `Tohru` | トール | 06-30 | [小林さんちのメイドラゴン](https://maidragon.jp/) |
 
 > Work titles are given in the original Japanese; the links point to **official sites** (TV anime official site or the publisher's special page). 「わたなれ」 is the official short title of 『わたしが恋人になれるわけないじゃん、ムリムリ！（※ムリじゃなかった!?）』. The original 「安達としまむら」 site (`adashima.jp`) is no longer online, so the TBS anime site is linked instead.

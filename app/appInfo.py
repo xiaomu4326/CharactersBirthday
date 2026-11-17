@@ -6,6 +6,6 @@
   - apk/data.py 的 APP_VERSION
 """
 
-APP_VERSION = "1.0.5"
+APP_VERSION = "1.0.6"
 
 GITHUB_URL = "https://github.com/xiaomu4326/CharactersBirthday"

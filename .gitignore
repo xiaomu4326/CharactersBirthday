@@ -25,5 +25,12 @@ venv/
 *.zip
 *.log
 
+# ===== 签名材料（密钥库与口令绝不能提交）=====
+*.jks
+*.keystore
+apk/keys/
+*keystore*.txt
+*keystore*.properties
+
 # 写入数据时的原子替换临时文件
 data/.tmp-*

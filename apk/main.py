@@ -67,15 +67,16 @@ def _next_lang(current):
 
 
 def _normalize_birthday(text):
-    """把生日文本规范成 "MM-DD"（允许 4-1、04/01 这类写法）；非法时返回 None。"""
+    """把生日文本规范成 "MM-DD"（允许 4-1、04/01 这类写法）；非法时返回 None。
+
+    月份 1~12、日期 1~32：日期超过当月天数时按「设定日期」处理
+    （例如 08-32 会按 9 月 1 日那一刻倒计时，且永远不会真正到达）。
+    """
     match = re.fullmatch(r"\s*(\d{1,2})\s*[-/.]\s*(\d{1,2})\s*", text or "")
     if match is None:
         return None
     month, day = int(match.group(1)), int(match.group(2))
-    try:
-        # 用闰年（2000）校验，顺带允许 02-29
-        date(2000, month, day)
-    except ValueError:
+    if not (1 <= month <= 12 and 1 <= day <= 32):
         return None
     return f"{month:02d}-{day:02d}"
 
@@ -85,45 +86,113 @@ def _storage(page):
     return getattr(page, "shared_preferences", None) or getattr(page, "client_storage", None)
 
 
+# 每个月最多允许的"日期"（2 月留到 29 日，闰年由 _make_date 处理）
+_MAX_DAY = {1: 31, 2: 29, 3: 31, 4: 30, 5: 31, 6: 30,
+            7: 31, 8: 31, 9: 30, 10: 31, 11: 30, 12: 31}
+
+
+def _parse_birthday(birthday):
+    """把 "MM-DD" 拆成 (月, 日)；格式不对时返回 None。
+
+    只拆格式、不校验日期真伪 —— 设定上的 8 月 32 日这种日期也要能存。
+    """
+    try:
+        month, day = (int(part) for part in birthday.split("-"))
+    except (AttributeError, ValueError):
+        return None
+    if not (1 <= month <= 12) or not (1 <= day <= 32):
+        return None
+    return month, day
+
+
+def _is_virtual_date(month, day):
+    """日期是否在现实中不存在（超过当月最大天数，如 8 月 32 日）。"""
+    return day > _MAX_DAY[month]
+
+
+def _virtual_date(year, month):
+    """设定日期对应的时刻：下个月 1 日（8 月 32 日 → 9 月 1 日）。"""
+    return date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
+
+
+def _virtual_moment(year, month):
+    """同上，返回 datetime（当天 00:00:00）。"""
+    return (datetime(year + 1, 1, 1) if month == 12
+            else datetime(year, month + 1, 1))
+
+
 def _make_date(year, month, day):
-    """构造日期；2 月 29 日遇到非闰年时回退到 2 月 28 日。"""
+    """构造日期；2 月 29 日在平年回退到 2 月 28 日，其它不存在的日期返回 None。"""
     try:
         return date(year, month, day)
     except ValueError:
-        return date(year, 2, 28)
+        if month == 2 and day == 29:
+            return date(year, 2, 28)
+        return None
 
 
 def _make_datetime(year, month, day):
-    """构造当天 00:00:00 的 datetime；2 月 29 日非闰年时回退到 2 月 28 日。"""
+    """构造当天 00:00:00 的 datetime；规则同 _make_date。"""
     try:
         return datetime(year, month, day)
     except ValueError:
-        return datetime(year, 2, 28)
+        if month == 2 and day == 29:
+            return datetime(year, 2, 28)
+        return None
 
 
 def _remaining_days(name, today=None):
-    """返回角色距离下次生日的剩余天数；找不到角色返回 None。"""
+    """返回角色距离下次生日的剩余天数；找不到角色或日期无法解析时返回 None。"""
     birthday = BIRTHDAYS.get(name)
     if birthday is None:
         return None
-    month, day = map(int, birthday.split("-"))
+    parsed = _parse_birthday(birthday)
+    if parsed is None:
+        return None
+    month, day = parsed
     today = today or date.today()
+
+    # 设定上不存在的日期：按"下个月 1 日"计算，到点即翻到明年，永远到不了 0
+    if _is_virtual_date(month, day):
+        target = _virtual_date(today.year, month)
+        if target <= today:
+            target = _virtual_date(today.year + 1, month)
+        return (target - today).days
+
     bd = _make_date(today.year, month, day)
+    if bd is None:
+        return None
     if bd < today:
         bd = _make_date(today.year + 1, month, day)
+        if bd is None:
+            return None
     return (bd - today).days
 
 
 def _next_birthday(name):
-    """返回角色下一次生日的时刻（当天 00:00:00）。"""
+    """返回角色下一次生日的时刻（当天 00:00:00）；日期无法解析时返回 None。"""
     birthday = BIRTHDAYS.get(name)
     if birthday is None:
         return None
-    month, day = map(int, birthday.split("-"))
+    parsed = _parse_birthday(birthday)
+    if parsed is None:
+        return None
+    month, day = parsed
     now = datetime.now()
+
+    if _is_virtual_date(month, day):
+        target = _virtual_moment(now.year, month)
+        if target <= now:
+            target = _virtual_moment(now.year + 1, month)
+        return target
+
     nxt = _make_datetime(now.year, month, day)
+    if nxt is None:
+        return None
     if nxt <= now:
         nxt = _make_datetime(now.year + 1, month, day)
+        if nxt is None:
+            return None
     return nxt
 
 
@@ -282,8 +351,9 @@ def main(page: ft.Page):
 
         countdown = _countdown(en)
         if countdown is None:
-            detail_countdown.value = "--"
-            detail_countdown.color = ACCENT
+            # 生日写在那里、但现实中没有这一天（例如 8 月 32 日）：给个明确说法
+            detail_countdown.value = t("no_such_date") if birthday else "--"
+            detail_countdown.color = SUBTEXT if birthday else ACCENT
             return
         days, hours, minutes, seconds = countdown
         detail_countdown.value = (

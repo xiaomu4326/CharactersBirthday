@@ -37,6 +37,7 @@
     "btn_open_link": "打开链接",
     "license_label": "许可证",
     "license_text": "代码 MIT · 角色数据 CC0 1.0",
+    "no_such_date": "无对应日期",
     "delete_pick": "选择要删除的角色",
     "no_characters": "没有可删除的角色"
 }

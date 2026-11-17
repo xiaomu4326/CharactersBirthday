@@ -35,15 +35,16 @@ def _load_app_icon(size=96):
 
 
 def _normalize_birthday(text):
-    """把生日文本规范成 "MM-DD"（允许 4-1、04/01 这类写法）；非法时返回 None。"""
+    """把生日文本规范成 "MM-DD"（允许 4-1、04/01 这类写法）；非法时返回 None。
+
+    月份 1~12、日期 1~32：日期超过当月天数时按「设定日期」处理
+    （例如 08-32 会按 9 月 1 日那一刻倒计时，且永远不会真正到达）。
+    """
     match = re.fullmatch(r"\s*(\d{1,2})\s*[-/.]\s*(\d{1,2})\s*", text or "")
     if match is None:
         return None
     month, day = int(match.group(1)), int(match.group(2))
-    try:
-        # 用闰年（2000）校验，顺带允许 02-29
-        date(2000, month, day)
-    except ValueError:
+    if not (1 <= month <= 12 and 1 <= day <= 32):
         return None
     return f"{month:02d}-{day:02d}"
 
@@ -163,7 +164,11 @@ def build_window():
 
         countdown = remainDays.get_selected_character_countdown(en_name)
         if countdown is None:
-            detail_countdown.config(text="--", fg=theme.ACCENT)
+            # 生日写在那里、但现实中没有这一天（例如 8 月 32 日）：给个明确说法
+            detail_countdown.config(
+                text=t("no_such_date") if birthday else "--",
+                fg=theme.SUBTEXT if birthday else theme.ACCENT,
+            )
             return
         days, hours, minutes, seconds = countdown
         detail_countdown.config(

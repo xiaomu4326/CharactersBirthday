@@ -298,7 +298,7 @@ def main(page: ft.Page):
 
     dropdown = ft.Dropdown(
         options=[],
-        on_select=lambda e: _select(e.control.value),
+        on_select=lambda e: _select(e.control.value, open_detail=True),
         text_size=FONT_SUB,
         fill_color=CARD_BG,
         border_color=CARD_BORDER,
@@ -371,7 +371,7 @@ def main(page: ft.Page):
             badge_text.value = days_text
             badge_box.bgcolor = ACCENT_TODAY if is_today else ACCENT
 
-    def _select(en):
+    def _select(en, open_detail=False):
         # 切换选中角色：同步下拉框显示、高亮对应卡片，并刷新详情
         state["selected"] = en
         if en is not None:
@@ -386,6 +386,8 @@ def main(page: ft.Page):
                 rank_box.bgcolor = RANK_BG
                 rank_text.color = RANK_FG
         _refresh_detail()
+        if open_detail and en is not None:
+            _open_detail()
 
     def _build_cards():
         # 重建预览卡片：清空旧卡片，按最新剩余天数重新排序 Top5
@@ -447,7 +449,7 @@ def main(page: ft.Page):
                 border_radius=8,
                 padding=ft.Padding(12, 12, 12, 12),
                 margin=ft.Margin(16, 6, 16, 6),
-                on_click=lambda e, en=en: _select(en),
+                on_click=lambda e, en=en: _select(en, open_detail=True),
             )
 
             card_refs[en] = (card, rank_box, rank_text)
@@ -466,6 +468,7 @@ def main(page: ft.Page):
         )
         select_label.value = t("select_character")
         detail_caption.value = t("until_next_birthday")
+        detail_title_text.value = t("detail_title")
         section.value = t("preview_title", top=state["top_count"])
         footer.value = t("total_count", n=len(state["all"]), top=state["top_count"])
         lang_button.content.value = LANG_NAMES[state["lang"]]
@@ -479,7 +482,61 @@ def main(page: ft.Page):
         _apply_lang()
         page.update()
 
-    # ---------- 设置：添加 / 删除角色 ----------
+    # ---------- 页面栈：设置与详情都是整页 ----------
+    def _push_page(view):
+        # 压入一层整页；安卓返回键会触发 page.on_view_pop
+        page.views.append(view)
+        page.update()
+
+    def _pop_page(view=None):
+        # 返回上一页：系统返回键会把被弹出的页传进来
+        if len(page.views) <= 1:
+            return
+        if view is not None and view in page.views:
+            page.views.remove(view)
+        else:
+            page.views.pop()
+        page.update()
+
+    page.on_view_pop = lambda e: _pop_page(getattr(e, "view", None))
+
+    def _page_appbar(title):
+        # 每个整页统一的顶栏：返回箭头 + 标题
+        return ft.AppBar(
+            title=title,
+            bgcolor=HEADER_BG,
+            color=HEADER_FG,
+            leading=ft.IconButton(
+                icon=ft.Icons.ARROW_BACK,
+                icon_color=HEADER_FG,
+                tooltip=t("btn_back"),
+                on_click=lambda e: _pop_page(),
+            ),
+        )
+
+    def _page(title, controls, route, spacing=12):
+        # 整页骨架：顶栏 + 可滚动内容
+        return ft.View(
+            route=route,
+            appbar=_page_appbar(
+                ft.Text(title, size=FONT_SUB, weight="bold", color=HEADER_FG)
+            ),
+            controls=[
+                ft.SafeArea(
+                    content=ft.Column(
+                        controls,
+                        spacing=spacing,
+                        horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+                        scroll=ft.ScrollMode.AUTO,
+                        expand=True,
+                    ),
+                    expand=True,
+                )
+            ],
+            bgcolor=BG,
+            padding=ft.Padding(16, 12, 16, 16),
+        )
+
     def _settings_entry(text, color, on_click):
         # 设置菜单里的一行
         return ft.Container(
@@ -491,37 +548,45 @@ def main(page: ft.Page):
             on_click=on_click,
         )
 
-    def _open_settings(view="menu"):
-        # 设置面板：先选功能（添加 / 删除），选中后再进入对应的子页
-        def _go(target):
-            page.pop_dialog()
-            _open_settings(target)
-
-        if view == "menu":
-            dialog = ft.AlertDialog(
-                modal=True,
+    def _action_button(text, on_click, color=ACCENT):
+        # 页面底部的主操作按钮
+        return ft.TextButton(
+            content=ft.Text(text, size=FONT_SUB, weight="bold", color=color),
+            style=ft.ButtonStyle(
                 bgcolor=CARD_BG,
-                title=ft.Text(t("settings"), size=FONT_NAME, weight="bold",
-                              color=TEXT),
-                content=ft.Column(
-                    [
-                        _settings_entry(f"＋ {t('add_character')}", TEXT,
-                                        lambda e: _go("add")),
-                        _settings_entry(f"－ {t('delete_character')}", ERROR,
-                                        lambda e: _go("delete")),
-                        _settings_entry(t("about"), TEXT, lambda e: _go("about")),
-                    ],
-                    spacing=8, tight=True, width=300,
-                ),
-                actions=[
-                    ft.TextButton(
-                        content=ft.Text(t("btn_close"), size=FONT_SUB,
-                                        color=SUBTEXT),
-                        on_click=lambda e: page.pop_dialog(),
+                padding=ft.Padding(18, 12, 18, 12),
+                shape=ft.RoundedRectangleBorder(radius=8),
+            ),
+            on_click=on_click,
+        )
+
+    def _open_settings(view="menu"):
+        # 设置：菜单 / 添加 / 删除 / 关于，各自压一层整页
+        _push_page(_settings_view(view))
+
+    def _settings_view(view):
+        # 按名称构造设置页（每次打开重新构造，文案与候选都是最新的）
+        if view == "menu":
+            return _page(
+                t("settings"),
+                [
+                    _settings_entry(
+                        f"＋ {t('add_character')}", TEXT,
+                        lambda e: _open_settings("add"),
+                    ),
+                    _settings_entry(
+                        f"－ {t('delete_character')}", ERROR,
+                        lambda e: _open_settings("delete"),
+                    ),
+                    _settings_entry(
+                        t("about"), TEXT,
+                        lambda e: _open_settings("about"),
                     ),
                 ],
+                "/settings",
             )
-        elif view == "add":
+
+        if view == "add":
             key_field = ft.TextField(label=t("field_key"), text_size=FONT_SUB,
                                      color=TEXT, border_color=CARD_BORDER,
                                      filled=True, fill_color=CARD_BG,
@@ -536,33 +601,26 @@ def main(page: ft.Page):
                                           filled=True, fill_color=CARD_BG,
                                           hint_text=t("hint_birthday_format"))
             error_text = ft.Text("", size=FONT_META, color=ERROR)
-            panel_height = max(180, min(380, int((page.height or 800) * 0.4)))
-            dialog = ft.AlertDialog(
-                modal=True,
-                bgcolor=CARD_BG,
-                title=ft.Text(f"{t('settings')} · {t('add_character')}",
-                              size=FONT_NAME, weight="bold", color=TEXT),
-                content=ft.Column(
-                    [key_field, name_field, birthday_field, error_text],
-                    spacing=8, tight=True, width=320,
-                    height=panel_height, scroll=ft.ScrollMode.AUTO,
-                ),
-                actions=[
-                    ft.TextButton(
-                        content=ft.Text(t("btn_back"), size=FONT_SUB,
-                                        color=SUBTEXT),
-                        on_click=lambda e: _go("menu"),
-                    ),
-                    ft.TextButton(
-                        content=ft.Text(t("btn_save"), size=FONT_SUB, color=ACCENT),
-                        on_click=lambda e: page.run_task(
+
+            return _page(
+                f"{t('settings')} · {t('add_character')}",
+                [
+                    key_field,
+                    name_field,
+                    birthday_field,
+                    error_text,
+                    _action_button(
+                        t("btn_save"),
+                        lambda e: page.run_task(
                             _commit_add, key_field, name_field,
                             birthday_field, error_text, lambda: None,
                         ),
                     ),
                 ],
+                "/settings/add",
             )
-        elif view == "delete":
+
+        if view == "delete":
             delete_dropdown = ft.Dropdown(
                 label=t("delete_pick"),
                 options=[
@@ -580,7 +638,7 @@ def main(page: ft.Page):
             delete_error = ft.Text("", size=FONT_META, color=ERROR)
 
             def _refresh_delete_options():
-                # 删除成功后重建候选，保持在删除子页
+                # 删除成功后重建候选，停留在删除页
                 current = delete_dropdown.value
                 delete_dropdown.options = [
                     ft.dropdown.Option(key=en, text=f"{NAMES.get(en, en)} · {en}")
@@ -598,68 +656,51 @@ def main(page: ft.Page):
                     return
                 _confirm_delete(en, _refresh_delete_options)
 
-            dialog = ft.AlertDialog(
-                modal=True,
-                bgcolor=CARD_BG,
-                title=ft.Text(f"{t('settings')} · {t('delete_character')}",
-                              size=FONT_NAME, weight="bold", color=TEXT),
-                content=ft.Column(
-                    [delete_dropdown, delete_error],
-                    spacing=8, tight=True, width=320,
-                ),
-                actions=[
-                    ft.TextButton(
-                        content=ft.Text(t("btn_back"), size=FONT_SUB,
-                                        color=SUBTEXT),
-                        on_click=lambda e: _go("menu"),
-                    ),
-                    ft.TextButton(
-                        content=ft.Text(t("btn_delete"), size=FONT_SUB, color=ERROR),
-                        on_click=_delete,
-                    ),
+            return _page(
+                f"{t('settings')} · {t('delete_character')}",
+                [
+                    delete_dropdown,
+                    delete_error,
+                    _action_button(t("btn_delete"), _delete, ERROR),
                 ],
+                "/settings/delete",
             )
-        else:   # about
-            dialog = ft.AlertDialog(
-                modal=True,
-                bgcolor=CARD_BG,
-                title=ft.Text(f"{t('settings')} · {t('about')}",
-                              size=FONT_NAME, weight="bold", color=TEXT),
-                content=ft.Column(
+
+        # about
+        return _page(
+            f"{t('settings')} · {t('about')}",
+            [
+                ft.Row(
+                    [ft.Image(src="icon.png", width=88, height=88)],
+                    alignment=ft.MainAxisAlignment.CENTER,
+                ),
+                ft.Text(t("about_intro"), size=FONT_SUB, color=TEXT),
+                ft.Row(
                     [
-                        ft.Row(
-                            [ft.Image(src="icon.png", width=88, height=88)],
-                            alignment=ft.MainAxisAlignment.CENTER,
-                        ),
-                        ft.Text(t("about_intro"), size=FONT_SUB, color=TEXT),
-                        ft.Row(
-                            [
-                                ft.Text(t("version_label"), size=FONT_META,
-                                        color=SUBTEXT),
-                                ft.Text(APP_VERSION, size=FONT_SUB, color=TEXT),
-                            ],
-                            spacing=8,
-                        ),
-                        ft.Text(f"{t('license_label')}  {t('license_text')}",
-                                size=FONT_META, color=SUBTEXT),
-                        ft.Text(t("github_label"), size=FONT_META, color=SUBTEXT),
-                        ft.Container(
-                            content=ft.Text(GITHUB_URL, size=FONT_META,
-                                            color=ACCENT),
-                            on_click=lambda e: page.run_task(_open_github),
-                        ),
+                        ft.Text(t("version_label"), size=FONT_META, color=SUBTEXT),
+                        ft.Text(APP_VERSION, size=FONT_SUB, color=TEXT),
                     ],
-                    spacing=8, tight=True, width=320,
+                    spacing=8,
                 ),
-                actions=[
-                    ft.TextButton(
-                        content=ft.Text(t("btn_back"), size=FONT_SUB,
-                                        color=SUBTEXT),
-                        on_click=lambda e: _go("menu"),
-                    ),
-                ],
-            )
-        page.show_dialog(dialog)
+                ft.Text(f"{t('license_label')}  {t('license_text')}",
+                        size=FONT_META, color=SUBTEXT),
+                ft.Text(t("github_label"), size=FONT_META, color=SUBTEXT),
+                ft.Container(
+                    content=ft.Text(GITHUB_URL, size=FONT_META, color=ACCENT),
+                    on_click=lambda e: page.run_task(_open_github),
+                ),
+            ],
+            "/settings/about",
+        )
+
+    def _open_detail():
+        # 打开整页详情：详情卡片始终复用同一组控件，避免与每秒刷新脱节
+        if state["selected"] is None:
+            return
+        if detail_view in page.views:
+            page.views.remove(detail_view)
+        page.views.append(detail_view)
+        page.update()
 
     async def _open_github():
         # 打开仓库页面；没有可用浏览器时静默失败，不影响其他功能
@@ -720,7 +761,7 @@ def main(page: ft.Page):
         _apply_lang()
         _select(key)
         if stay_open is None:
-            page.pop_dialog()          # 独立的添加弹窗：保存后关闭
+            _pop_page()            # 没有回调时，保存后直接退回上一页
         else:
             # 设置面板：清空输入、刷新删除候选，保持在面板内
             key_field.value = ""
@@ -982,7 +1023,28 @@ def main(page: ft.Page):
         border=_border(1, CARD_BORDER),
         border_radius=8,
         padding=ft.Padding(14, 12, 14, 12),
-        margin=ft.Margin(16, 10, 16, 0),
+    )
+
+    # 详情整页：标题文字留引用，切换语言时同步
+    detail_title_text = ft.Text(t("detail_title"), size=FONT_SUB, weight="bold",
+                                color=HEADER_FG)
+    detail_view = ft.View(
+        route="/detail",
+        appbar=_page_appbar(detail_title_text),
+        controls=[
+            ft.SafeArea(
+                content=ft.Column(
+                    [detail],
+                    spacing=0,
+                    horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+                    scroll=ft.ScrollMode.AUTO,
+                    expand=True,
+                ),
+                expand=True,
+            )
+        ],
+        bgcolor=BG,
+        padding=ft.Padding(16, 12, 16, 16),
     )
 
     section_row = ft.Container(
@@ -998,7 +1060,7 @@ def main(page: ft.Page):
     page.add(
         ft.SafeArea(
             content=ft.Column(
-                [header, select_row, detail, section_row, cards_list, footer_row],
+                [header, select_row, section_row, cards_list, footer_row],
                 spacing=0,
                 horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
                 expand=True,

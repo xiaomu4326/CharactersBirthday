@@ -4,7 +4,7 @@
 根目录 JSON 无此项；若重新生成本文件请一并保留。"""
 
 # 应用元信息（版本号需与 apk/pyproject.toml、根目录 appInfo.py 保持一致）
-APP_VERSION = "1.0.6"
+APP_VERSION = "1.0.7"
 GITHUB_URL = "https://github.com/xiaomu4326/CharactersBirthday"
 
 BIRTHDAYS = {'OumiShiori': '04-01',
@@ -107,6 +107,7 @@ TRANSLATIONS = {'zh': {'app_title': '角色生日倒计时',
         'license_label': '许可证',
         'license_text': '代码 MIT · 角色数据 CC0 1.0',
         'no_such_date': '无对应日期',
+        'detail_title': '角色详情',
         'delete_pick': '选择要删除的角色',
         'no_characters': '没有可删除的角色'},
  'en': {'app_title': 'Character Birthday Countdown',
@@ -149,6 +150,7 @@ TRANSLATIONS = {'zh': {'app_title': '角色生日倒计时',
         'license_label': 'License',
         'license_text': 'Code MIT · Character data CC0 1.0',
         'no_such_date': 'No such date',
+        'detail_title': 'Character details',
         'delete_pick': 'Character to delete',
         'no_characters': 'No characters to delete'},
  'ja': {'app_title': 'キャラクター誕生日カウントダウン',
@@ -191,5 +193,6 @@ TRANSLATIONS = {'zh': {'app_title': '角色生日倒计时',
         'license_label': 'ライセンス',
         'license_text': 'コード MIT ／ キャラクターデータ CC0 1.0',
         'no_such_date': '存在しない日付',
+        'detail_title': 'キャラクター詳細',
         'delete_pick': '削除するキャラクター',
         'no_characters': '削除できるキャラクターがいません'}}

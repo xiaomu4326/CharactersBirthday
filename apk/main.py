@@ -298,7 +298,7 @@ def main(page: ft.Page):
 
     dropdown = ft.Dropdown(
         options=[],
-        on_select=lambda e: _select(e.control.value, open_detail=True),
+        on_select=lambda e: _select(e.control.value),
         text_size=FONT_SUB,
         fill_color=CARD_BG,
         border_color=CARD_BORDER,
@@ -371,8 +371,8 @@ def main(page: ft.Page):
             badge_text.value = days_text
             badge_box.bgcolor = ACCENT_TODAY if is_today else ACCENT
 
-    def _select(en, open_detail=False):
-        # 切换选中角色：同步下拉框显示、高亮对应卡片，并刷新详情
+    def _select(en):
+        # 切换选中角色：同步下拉框显示、高亮对应卡片，并刷新详情卡片
         state["selected"] = en
         if en is not None:
             dropdown.value = en
@@ -386,8 +386,6 @@ def main(page: ft.Page):
                 rank_box.bgcolor = RANK_BG
                 rank_text.color = RANK_FG
         _refresh_detail()
-        if open_detail and en is not None:
-            _open_detail()
 
     def _build_cards():
         # 重建预览卡片：清空旧卡片，按最新剩余天数重新排序 Top5
@@ -449,7 +447,7 @@ def main(page: ft.Page):
                 border_radius=8,
                 padding=ft.Padding(12, 12, 12, 12),
                 margin=ft.Margin(16, 6, 16, 6),
-                on_click=lambda e, en=en: _select(en, open_detail=True),
+                on_click=lambda e, en=en: _select(en),
             )
 
             card_refs[en] = (card, rank_box, rank_text)
@@ -468,7 +466,6 @@ def main(page: ft.Page):
         )
         select_label.value = t("select_character")
         detail_caption.value = t("until_next_birthday")
-        detail_title_text.value = t("detail_title")
         section.value = t("preview_title", top=state["top_count"])
         footer.value = t("total_count", n=len(state["all"]), top=state["top_count"])
         lang_button.content.value = LANG_NAMES[state["lang"]]
@@ -692,15 +689,6 @@ def main(page: ft.Page):
             ],
             "/settings/about",
         )
-
-    def _open_detail():
-        # 打开整页详情：详情卡片始终复用同一组控件，避免与每秒刷新脱节
-        if state["selected"] is None:
-            return
-        if detail_view in page.views:
-            page.views.remove(detail_view)
-        page.views.append(detail_view)
-        page.update()
 
     async def _open_github():
         # 打开仓库页面；没有可用浏览器时静默失败，不影响其他功能
@@ -1023,28 +1011,7 @@ def main(page: ft.Page):
         border=_border(1, CARD_BORDER),
         border_radius=8,
         padding=ft.Padding(14, 12, 14, 12),
-    )
-
-    # 详情整页：标题文字留引用，切换语言时同步
-    detail_title_text = ft.Text(t("detail_title"), size=FONT_SUB, weight="bold",
-                                color=HEADER_FG)
-    detail_view = ft.View(
-        route="/detail",
-        appbar=_page_appbar(detail_title_text),
-        controls=[
-            ft.SafeArea(
-                content=ft.Column(
-                    [detail],
-                    spacing=0,
-                    horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
-                    scroll=ft.ScrollMode.AUTO,
-                    expand=True,
-                ),
-                expand=True,
-            )
-        ],
-        bgcolor=BG,
-        padding=ft.Padding(16, 12, 16, 16),
+        margin=ft.Margin(16, 10, 16, 0),
     )
 
     section_row = ft.Container(
@@ -1060,7 +1027,7 @@ def main(page: ft.Page):
     page.add(
         ft.SafeArea(
             content=ft.Column(
-                [header, select_row, section_row, cards_list, footer_row],
+                [header, select_row, detail, section_row, cards_list, footer_row],
                 spacing=0,
                 horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
                 expand=True,

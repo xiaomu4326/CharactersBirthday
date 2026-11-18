@@ -31,8 +31,7 @@ Keep your favorite characters' birthdays in one small window — sorted by how s
 | HiDPI support | Calls `SetProcessDpiAwareness(1)` on Windows so the UI stays crisp |
 | Birthday reminder (APK only) | Pushes a system notification on the birthday, at most once per day |
 | Settings page | The "Settings" button in the top-right asks what you want to do: "Add character", "Delete character" or "About", each opening its own sub-page |
-| Full pages (APK only) | Settings and the character detail are **full pages** (back arrow in the app bar, Android back walks the stack), no longer floating dialogs over the main screen |
-| Detail page (APK only) | Pick from the dropdown or tap any card to open a full page with name, birthday and the second-level countdown |
+| Full pages (APK only) | All four settings pages are **full pages** (back arrow in the app bar, Android back walks the stack), no longer floating dialogs over the main screen |
 | About page | App icon, short description, version number, license info (code MIT · data CC0 1.0) and a link to the GitHub repository (opens in the browser) |
 | Add characters in-app | Settings → "Add character": fill in key / name / birthday; the desktop build writes back to `data/` while the APK stores it on the device |
 | Delete characters in-app | Settings → "Delete character": pick a character and confirm; the desktop build removes it from `data/`, while the APK records a tombstone so it stays hidden after a restart |

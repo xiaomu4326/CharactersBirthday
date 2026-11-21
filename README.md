@@ -29,7 +29,7 @@
 | 闰日兜底 | 2 月 29 日遇到平年自动回退到 2 月 28 日 |
 | 设定日期 | 8 月 32 日这类现实中不存在的设定日期同样能倒计时，到 9 月 1 日零点自动翻年 |
 | 高分屏适配 | Windows 下调用 `SetProcessDpiAwareness(1)`，避免界面发虚 |
-| 生日提醒（仅 APK） | 生日当天推送一条系统通知，同一天只发一次 |
+| 生日提醒（仅 APK） | 生日当天 **09:00** 推送系统通知；用 AlarmManager 提前排好闹钟，App 不在前台甚至被杀掉也能响，每个角色排未来 2 次 |
 | 设置页 | 右上角「设置」先选功能：「添加角色」「删除角色」「关于」，选中后进入对应子页 |
 | 独立页面（仅 APK） | 设置相关的四个页面都是**整页**（顶部返回箭头，Android 返回键可逐层退回），不再以小窗浮在主界面上 |
 | 关于页 | 应用图标、简介、版本号、许可证信息（代码 MIT · 数据 CC0 1.0）与指向 GitHub 仓库的链接（点击直接在浏览器打开） |
@@ -84,10 +84,19 @@ xcopy /E /I /Y data "dist\CharactersBirthday\data"
 ### 打包 Android APK
 
 ```bash
-flet build apk ./apk --arch arm64-v8a --yes --skip-flutter-doctor
+cd apk
+flet build apk . --arch arm64-v8a --yes --skip-flutter-doctor
 ```
 
-必须在**仓库根目录**执行（`apk/pyproject.toml` 里的 `tool.flet.template.url` 是相对当前工作目录的路径）。产物在 `apk/build/apk/`。首次构建会下载 Flutter SDK、Android SDK 与通知插件依赖，耗时较长。
+必须在 **`apk/` 目录**内执行（`apk/pyproject.toml` 里的 `tool.flet.template.url = "flet-template"` 相对当前工作目录解析）。产物在 `apk/build/apk/`。首次构建会下载 Flutter SDK、Android SDK 与通知插件依赖，耗时较长。
+
+**发布用的包必须带正式签名**，否则装到已安装正式签名的手机上会报 `INSTALL_FAILED_UPDATE_INCOMPATIBLE`。用仓库里的脚本构建即可（口令从 keystore 说明文件读取，不写进仓库）：
+
+```powershell
+pwsh -File apk/build_apk_signed.ps1 -KeystoreInfo "<你的 charactersbirthday-keystore-info.txt>"
+```
+
+同一目录下的 `build_apk.bat` 只做不带签名的快速构建（debug 签名），仅适合在模拟器或全新安装的设备上试跑。
 
 详见 [apk/README.md](apk/README.md)。
 

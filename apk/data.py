@@ -4,7 +4,7 @@
 根目录 JSON 无此项；若重新生成本文件请一并保留。"""
 
 # 应用元信息（版本号需与 apk/pyproject.toml、根目录 appInfo.py 保持一致）
-APP_VERSION = "1.0.7"
+APP_VERSION = "1.0.8"
 GITHUB_URL = "https://github.com/xiaomu4326/CharactersBirthday"
 
 BIRTHDAYS = {'OumiShiori': '04-01',

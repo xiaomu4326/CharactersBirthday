@@ -45,14 +45,24 @@
 
 ## 打包命令
 
-在**仓库根目录**执行（需要已安装 Flet CLI 与网络）：
+在**本目录（`apk/`）**内执行（需要已安装 Flet CLI 与网络）：
 
 ```bash
-flet build apk ./apk --arch arm64-v8a --yes --skip-flutter-doctor
+flet build apk . --arch arm64-v8a --yes --skip-flutter-doctor
 ```
 
 - 产物输出到 `apk/build/apk/`。
 - `--arch` 可选 `arm64-v8a`、`armeabi-v7a`、`x86_64`；省略则打包全部架构。
 - 首次打包会自动下载 Flutter SDK、Android SDK、通知插件依赖（耗时较长）。
-- `tool.flet.template.url = "apk/flet-template"` 是相对于当前工作目录的路径，
-  因此必须在仓库根目录执行上述命令。
+- `tool.flet.template.url = "flet-template"` 是相对于**当前工作目录**的路径，
+  所以必须在 `apk/` 目录里执行上述命令。
+
+## 发布签名
+
+`flet build` 每次重新渲染 Android 工程时，签名配置来自环境变量；少了就退回 debug
+签名，装到已安装正式签名的手机上会报 `INSTALL_FAILED_UPDATE_INCOMPATIBLE`。
+
+- 发布构建：`pwsh -File build_apk_signed.ps1 -KeystoreInfo "<keystore 说明文件.txt>"`  
+  脚本从说明文件里读 store 口令，设置 `FLET_ANDROID_SIGNING_KEY_*` 四个环境变量，
+  构建后自动用 `apksigner` 校验证书。
+- `build_apk.bat`：不带签名的快速构建（debug 签名），只适合模拟器或全新安装的设备。

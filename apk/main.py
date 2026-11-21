@@ -10,6 +10,7 @@
 import asyncio
 import json
 import re
+import zlib
 from datetime import date, datetime
 
 import flet as ft
@@ -59,6 +60,16 @@ LANG_NAMES = {"zh": "中文", "en": "English", "ja": "日本語"}
 CUSTOM_STORAGE_KEY = "custom_characters"
 # 已删除的内置角色（墓碑）：内置数据随包分发不能改，只能记下"别显示它"
 DELETED_STORAGE_KEY = "deleted_characters"
+
+# ---------- 生日提醒（Android AlarmManager 定时通知） ----------
+# 以前只在 App 运行（前台/后台）时才发通知，因为那是 Python 的每秒循环里判断的；
+# 现在改用系统闹钟提前排好，到点由系统的 receiver 自己发通知，
+# 与 App 是否在前台/后台/已被杀死无关。
+NOTIFY_HOUR = 9           # 生日当天几点提醒（本机时区）
+NOTIFY_MINUTE = 0
+REMINDER_OCCURRENCES = 2  # 每个角色往后排几次生日（排得多，长期不打开 App 也还能响）
+REMINDER_ID_BASE = 1000   # 定时通知 id 起点，避开即时通知用的 id=1
+REMINDER_CHANNEL_ID = "birthday_reminders"
 
 
 def _next_lang(current):
@@ -221,6 +232,43 @@ def _top_characters(limit=5):
              ((n, _remaining_days(n)) for n in BIRTHDAYS) if days is not None]
     items.sort(key=lambda item: item[1])
     return items[:limit]
+
+
+def _reminder_datetime(name, occurrence=0, now=None):
+    """该角色第 occurrence 次未来生日的提醒时刻（本机时区的 naive datetime）。
+
+    设定上不存在的日期（如 8 月 32 日）永远等不到"当天"，与 _remaining_days
+    的口径一致，直接不排提醒。日期无法解析时同样返回 None。
+    """
+    birthday = BIRTHDAYS.get(name)
+    if birthday is None:
+        return None
+    parsed = _parse_birthday(birthday)
+    if parsed is None:
+        return None
+    month, day = parsed
+    if _is_virtual_date(month, day):
+        return None
+
+    now = now or datetime.now()
+    upcoming = []
+    for year in range(now.year, now.year + 4):
+        moment = _make_datetime(year, month, day)
+        if moment is None:
+            continue
+        remind = moment.replace(hour=NOTIFY_HOUR, minute=NOTIFY_MINUTE,
+                                second=0, microsecond=0)
+        if remind > now:            # 今天已过提醒时刻就顺延到明年
+            upcoming.append(remind)
+    if occurrence >= len(upcoming):
+        return None
+    return upcoming[occurrence]
+
+
+def _reminder_id(name, occurrence=0):
+    """定时通知的 id：按角色名取稳定哈希，重复排同一角色只会覆盖、不会堆叠。"""
+    digest = zlib.crc32(name.encode("utf-8")) % 900000
+    return REMINDER_ID_BASE + digest * REMINDER_OCCURRENCES + occurrence
 
 
 def _border(width, color):
@@ -478,6 +526,8 @@ def main(page: ft.Page):
         state["lang"] = _next_lang(state["lang"])
         _apply_lang()
         page.update()
+        # 文案变了，已排的闹钟正文也要跟着换成新语言
+        page.run_task(_schedule_reminders, list(BIRTHDAYS))
 
     # ---------- 页面栈：设置与详情都是整页 ----------
     def _push_page(view):
@@ -758,6 +808,8 @@ def main(page: ft.Page):
             error_text.value = ""
             stay_open()
         page.update()
+        # 新角色的生日也排进系统闹钟（保存后立刻生效，不必等下次启动）
+        await _schedule_reminders([key])
 
     # ---------- 删除角色 ----------
     def _confirm_delete(en=None, after_success=None):
@@ -839,6 +891,8 @@ def main(page: ft.Page):
         BIRTHDAYS.pop(en, None)
         NAMES.pop(en, None)
         page.pop_dialog()
+        # 撤掉这个角色已经排好的闹钟，删了就不该再提醒
+        await _cancel_reminders(en)
         _build_cards()
         _apply_lang()
         # 删掉的正好是当前选中项：回退到最近生日的角色，一个不剩就清空
@@ -906,9 +960,13 @@ def main(page: ft.Page):
                 _select(state["selected"])
             page.update()
         _maybe_notify()
+        # 读回数据后再排一遍定时通知：新加/删除的角色都要跟着更新
+        await _schedule_reminders(list(BIRTHDAYS))
 
     def _maybe_notify():
-        # 当天有角色生日（剩余天数==0）时发一次通知；同一天只发一次
+        # 当天有角色生日时在应用内弹一次提示（同一天只弹一次）。
+        # 通知栏那条由系统闹钟负责（见 _schedule_reminders），这里不再重复发系统通知，
+        # 否则"闹钟已经响过 + 打开 App 又响一次"会变成两条。
         now = date.today()
         key = now.isoformat()
         if state["notified_date"] == key:
@@ -918,31 +976,67 @@ def main(page: ft.Page):
             return
         state["notified_date"] = key
         display = "、".join(NAMES.get(n, n) for n in names)
-
-        if notifications is not None:
-            # 系统级通知（出现在通知栏，退到后台也可见）
-            page.run_task(_send_system_notification, display)
-        else:
-            # 无原生插件时退化为应用内弹条
-            page.show_dialog(
-                ft.SnackBar(
-                    ft.Text(t("birthday_notification", name=display),
-                            size=FONT_SUB, color="#FFFFFF"),
-                    bgcolor=ACCENT_TODAY,
-                )
+        page.show_dialog(
+            ft.SnackBar(
+                ft.Text(t("birthday_notification", name=display),
+                        size=FONT_SUB, color="#FFFFFF"),
+                bgcolor=ACCENT_TODAY,
             )
+        )
 
-    async def _send_system_notification(display):
-        # 请求通知权限并发送系统通知；失败不影响主流程
+    # ---------- 定时通知：交给系统闹钟，App 不在也能响 ----------
+    async def _schedule_reminders(names):
+        # 给这些角色的未来生日排 AlarmManager 闹钟。系统到点会自己拉起
+        # ScheduledNotificationReceiver 发通知，与 App 进程是否存活无关。
+        if notifications is None:
+            return
+        mode = "inexact_allow_while_idle"
         try:
-            await notifications.request_permissions()
-            await notifications.show_notification(
-                notification_id=1,
-                title=t("app_title"),
-                body=t("birthday_notification", name=display),
-            )
+            if await notifications.can_schedule_exact_notifications():
+                mode = "exact_allow_while_idle"
         except Exception:
             pass
+        for name in names:
+            for occurrence in range(REMINDER_OCCURRENCES):
+                when = _reminder_datetime(name, occurrence)
+                if when is None:
+                    continue
+                if not await _schedule_one(name, occurrence, when, mode):
+                    # 精确闹钟被系统拒（未授权/厂商限制）时退回不精确模式，
+                    # 时间点会有几分钟到一小时的浮动，但照样能响。
+                    if mode == "exact_allow_while_idle":
+                        await _schedule_one(name, occurrence, when,
+                                            "inexact_allow_while_idle")
+
+    async def _schedule_one(name, occurrence, when, mode):
+        try:
+            await notifications.schedule_notification(
+                notification_id=_reminder_id(name, occurrence),
+                title=t("app_title"),
+                body=t("birthday_notification", name=NAMES.get(name, name)),
+                scheduled_time=when,
+                channel_id=REMINDER_CHANNEL_ID,
+                channel_name=t("app_title"),
+                channel_description=t("app_title"),
+                importance="high",
+                schedule_mode=mode,
+                payload=f"birthday:{name}",
+                category="reminder",
+            )
+            return True
+        except Exception:
+            return False
+
+    async def _cancel_reminders(name):
+        # 角色被删掉后，把它已经排上的闹钟撤掉，免得删了还响
+        if notifications is None:
+            return
+        for occurrence in range(REMINDER_OCCURRENCES):
+            try:
+                await notifications.cancel(
+                    notification_id=_reminder_id(name, occurrence))
+            except Exception:
+                pass
 
     async def _tick():
         # 每秒刷新一次倒计时；跨天时重新排序卡片并刷新日期相关文案

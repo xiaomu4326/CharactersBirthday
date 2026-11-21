@@ -34,3 +34,6 @@ apk/keys/
 
 # 写入数据时的原子替换临时文件
 data/.tmp-*
+
+# 本地构建临时目录（build_apk_signed.ps1 等使用）
+/.buildtmp/

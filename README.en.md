@@ -29,7 +29,7 @@ Keep your favorite characters' birthdays in one small window — sorted by how s
 | Leap-day fallback | February 29 falls back to February 28 in non-leap years |
 | Fictional dates | In-setting birthdays like August 32 still count down, rolling over at midnight on September 1 |
 | HiDPI support | Calls `SetProcessDpiAwareness(1)` on Windows so the UI stays crisp |
-| Birthday reminder (APK only) | Pushes a system notification on the birthday, at most once per day |
+| Birthday reminder (APK only) | A system notification at **09:00** on the birthday; alarms are scheduled ahead through AlarmManager, so it fires even when the app is in the background or has been killed — two upcoming birthdays per character |
 | Settings page | The "Settings" button in the top-right asks what you want to do: "Add character", "Delete character" or "About", each opening its own sub-page |
 | Full pages (APK only) | All four settings pages are **full pages** (back arrow in the app bar, Android back walks the stack), no longer floating dialogs over the main screen |
 | About page | App icon, short description, version number, license info (code MIT · data CC0 1.0) and a link to the GitHub repository (opens in the browser) |
@@ -84,10 +84,19 @@ The output lands in `dist\CharactersBirthday\`; the whole folder can be copied a
 ### Build the Android APK
 
 ```bash
-flet build apk ./apk --arch arm64-v8a --yes --skip-flutter-doctor
+cd apk
+flet build apk . --arch arm64-v8a --yes --skip-flutter-doctor
 ```
 
-This must be run from the **repository root** (`tool.flet.template.url` in `apk/pyproject.toml` is resolved relative to the current working directory). The output is in `apk/build/apk/`. The first build downloads the Flutter SDK, the Android SDK and the notification plugin dependencies, so it takes a while.
+This must be run **inside `apk/`** (`tool.flet.template.url = "flet-template"` in `apk/pyproject.toml` is resolved relative to the current working directory). The output is in `apk/build/apk/`. The first build downloads the Flutter SDK, the Android SDK and the notification plugin dependencies, so it takes a while.
+
+**Release builds must be signed with the release key** — a debug-signed build fails to install over an already-signed copy with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`. Use the bundled script, which reads the password from the keystore info file and never stores it in the repo:
+
+```powershell
+pwsh -File apk/build_apk_signed.ps1 -KeystoreInfo "<your charactersbirthday-keystore-info.txt>"
+```
+
+`build_apk.bat` in the same folder is an unsigned (debug) quick build, only meant for emulators or fresh installs.
 
 See [apk/README.md](apk/README.md) for details.
 
